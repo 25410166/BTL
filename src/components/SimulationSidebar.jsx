@@ -1,11 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  PlayIcon,
-  PauseIcon,
-  StepForwardIcon,
-  StepBackIcon,
-  RotateCcwIcon,
-  ZapIcon,
   CopyIcon,
   DownloadIcon,
   CheckCircleIcon,
@@ -14,28 +8,12 @@ import {
 import { formatBoardToText } from '../algorithms/sudokuUtils.js';
 
 export function SimulationSidebar({
-  // Simulation Controls props
-  isPlaying,
-  onTogglePlay,
-  onStepForward,
-  onStepBackward,
-  onReset,
-  onInstantSolve,
-  speedMs,
-  onChangeSpeed,
+  currentStep,
   currentStepIndex,
   totalSteps,
-  onSeekStep,
-  strategy,
-  onChangeStrategy,
-  status,
-
-  // Step Trace props
-  currentStep,
   allSteps = [],
   onSelectStep,
-
-  // Output props
+  status,
   solvedBoard,
   initialEmptyCoords = [],
   executionStats,
@@ -43,7 +21,6 @@ export function SimulationSidebar({
   const [copied, setCopied] = useState(false);
   const logRef = useRef(null);
 
-  // Auto-scroll log to active item
   useEffect(() => {
     if (logRef.current) {
       const activeItem = logRef.current.querySelector('.log-row-current');
@@ -105,131 +82,17 @@ export function SimulationSidebar({
   return (
     <div className="sidebar-deck-root">
       {/* ========================================================
-          1. SIMULATION CONTROLS
-          ======================================================== */}
-      <div className="sidebar-card">
-        <div className="sidebar-card-header">
-          <span className="card-heading-title">Điều Khiển Thuật Toán</span>
-          {renderStatusBadge()}
-        </div>
-
-        {/* Action Buttons Row */}
-        <div className="control-btn-grid">
-          {/* Primary Run / Pause */}
-          <button
-            className={`btn-primary-action ${isPlaying ? 'btn-pause-mode' : 'btn-play-mode'}`}
-            onClick={onTogglePlay}
-            disabled={status === 'SOLVED' && currentStepIndex >= totalSteps - 1}
-          >
-            {isPlaying ? (
-              <>
-                <PauseIcon className="w-4 h-4" />
-                <span>Tạm Dừng</span>
-              </>
-            ) : (
-              <>
-                <PlayIcon className="w-4 h-4" />
-                <span>{currentStepIndex > 0 ? 'Tiếp Tục' : 'Chạy Mô Phỏng'}</span>
-              </>
-            )}
-          </button>
-
-          {/* Step Controls */}
-          <div className="btn-group-secondary">
-            <button
-              className="btn-sec-action"
-              onClick={onStepBackward}
-              disabled={isPlaying || currentStepIndex <= 0}
-              title="Lùi 1 bước"
-            >
-              <StepBackIcon className="w-3.5 h-3.5" />
-            </button>
-            <button
-              className="btn-sec-action"
-              onClick={onStepForward}
-              disabled={isPlaying || (totalSteps > 0 && currentStepIndex >= totalSteps - 1)}
-              title="Tiến 1 bước"
-            >
-              <StepForwardIcon className="w-3.5 h-3.5" />
-              <span>Tiến 1 Bước</span>
-            </button>
-            <button
-              className="btn-sec-action text-subtle hover:text-danger"
-              onClick={onReset}
-              title="Đặt lại trạng thái ban đầu"
-            >
-              <RotateCcwIcon className="w-3.5 h-3.5" />
-              <span>Reset</span>
-            </button>
-            <button
-              className="btn-sec-action btn-instant-solve"
-              onClick={onInstantSolve}
-              title="Giải tức thì không delay animation"
-            >
-              <ZapIcon className="w-3.5 h-3.5 text-accent" />
-              <span>Giải Tức Thì</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Strategy & Speed Row */}
-        <div className="control-params-row">
-          <div className="param-item">
-            <span className="param-label">Chiến Lược:</span>
-            <select
-              className="select-param"
-              value={strategy}
-              onChange={e => onChangeStrategy(e.target.value)}
-              disabled={isPlaying}
-            >
-              <option value="sequential">Quay Lui Tuần Tự (Chuẩn đề)</option>
-              <option value="mrv">MRV Heuristic (Điểm 10)</option>
-            </select>
-          </div>
-
-          <div className="param-item">
-            <span className="param-label">Tốc Độ: <strong className="text-primary font-mono">{speedMs}ms</strong></span>
-            <input
-              type="range"
-              min="5"
-              max="500"
-              step="5"
-              value={speedMs}
-              onChange={e => onChangeSpeed(parseInt(e.target.value, 10))}
-              className="slider-param"
-            />
-          </div>
-        </div>
-
-        {/* Timeline Scrubber */}
-        {totalSteps > 0 && (
-          <div className="timeline-scrubber-box">
-            <div className="timeline-info">
-              <span>Bước: <strong className="text-accent">{currentStepIndex + 1}</strong> / {totalSteps}</span>
-              <span>{Math.round(((currentStepIndex + 1) / totalSteps) * 100)}%</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max={Math.max(0, totalSteps - 1)}
-              value={currentStepIndex}
-              onChange={e => onSeekStep(parseInt(e.target.value, 10))}
-              disabled={isPlaying}
-              className="timeline-slider-bar"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* ========================================================
-          2. STEP INFORMATION (Current Step Inspector)
+          1. BƯỚC HIỆN TẠI (Step Information / Inspector)
           ======================================================== */}
       <div className="sidebar-card">
         <div className="sidebar-card-header">
           <span className="card-heading-title">Bước Hiện Tại</span>
-          <span className="step-counter-tag font-mono">
-            {totalSteps > 0 ? `${currentStepIndex + 1} / ${totalSteps}` : '0 / 0'}
-          </span>
+          <div className="flex items-center gap-2">
+            {renderStatusBadge()}
+            <span className="step-counter-tag font-mono">
+              {totalSteps > 0 ? `${currentStepIndex + 1} / ${totalSteps}` : '0 / 0'}
+            </span>
+          </div>
         </div>
 
         {/* Transition Summary */}
@@ -265,7 +128,7 @@ export function SimulationSidebar({
           </div>
 
           <div className="data-row">
-            <span className="data-key">Độ sâu (Depth)</span>
+            <span className="data-key">Độ sâu đệ quy</span>
             <span className="data-val font-mono text-purple">{depth}</span>
           </div>
 
@@ -332,18 +195,18 @@ export function SimulationSidebar({
       </div>
 
       {/* ========================================================
-          3. OUTPUT PANEL
+          2. KẾT QUẢ ĐẦU RA (Output Panel)
           ======================================================== */}
       <div className="sidebar-card">
         <div className="sidebar-card-header">
           <span className="card-heading-title">Kết Quả Đầu Ra</span>
           {status === 'SOLVED' ? (
             <span className="badge-status badge-solved flex items-center gap-1">
-              <CheckCircleIcon className="w-3 h-3" /> Thành Công
+              <CheckCircleIcon size={12} /> Thành Công
             </span>
           ) : status === 'NO_SOLUTION' ? (
             <span className="badge-status badge-error flex items-center gap-1">
-              <AlertTriangleIcon className="w-3 h-3" /> Vô Nghiệm
+              <AlertTriangleIcon size={12} /> Vô Nghiệm
             </span>
           ) : (
             <span className="text-[11px] text-subtle">Chờ thực thi</span>
@@ -387,11 +250,11 @@ export function SimulationSidebar({
             {/* Actions */}
             <div className="output-actions-row">
               <button className="btn-out-copy" onClick={handleCopyMatrix}>
-                <CopyIcon className="w-3.5 h-3.5" />
+                <CopyIcon size={13} />
                 <span>{copied ? 'Đã Sao Chép!' : 'Chép Ma Trận Kết Quả'}</span>
               </button>
               <button className="btn-out-download" onClick={handleDownloadTxt}>
-                <DownloadIcon className="w-3.5 h-3.5" />
+                <DownloadIcon size={13} />
                 <span>Tải .TXT</span>
               </button>
             </div>
@@ -402,7 +265,7 @@ export function SimulationSidebar({
           </div>
         ) : (
           <div className="output-empty-hint">
-            Bấm <strong>"Chạy Mô Phỏng"</strong> hoặc <strong>"Giải Tức Thì"</strong> để xem kết quả.
+            Bấm <strong>"Chạy Mô Phỏng"</strong> hoặc <strong>"Giải Tức Thì"</strong> trên thanh điều khiển bên dưới bàn cờ để xem kết quả.
           </div>
         )}
       </div>

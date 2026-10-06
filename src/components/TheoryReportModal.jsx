@@ -170,7 +170,7 @@ export function TheoryReportModal({ isOpen, onClose }) {
                   <br />
                   Số trạng thái tối đa lý thuyết là $9^5 = 59,049$ nút. Nhờ cơ chế cắt tỉa 3 tầng (hàng, cột, khối 3x3), số nhánh thực tế giảm xuống chỉ còn từ $1$ đến $3$ giá trị khả dĩ cho mỗi ô.
                   <br />
-                  Số phép toán thực tế chỉ dao động từ <strong>$5$ đến $150$ bước</strong>, thời gian thực thi trên CPU máy tính đo được là <strong>$&lt; 0.5 \text{ ms}$</strong> (tức thời).
+                  Số phép toán thực tế chỉ dao động từ <strong>5 đến 150 bước</strong>, thời gian thực thi trên CPU máy tính đo được là <strong>&lt; 0.5 ms</strong> (tức thời).
                 </p>
               </div>
 

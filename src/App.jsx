@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Navbar } from './components/Navbar.jsx';
 import { StatusBar } from './components/StatusBar.jsx';
 import { SudokuBoard } from './components/SudokuBoard.jsx';
+import { ControlToolbar } from './components/ControlToolbar.jsx';
 import { SimulationSidebar } from './components/SimulationSidebar.jsx';
 import { TestcaseGrid } from './components/TestcaseGrid.jsx';
 import { InputPanel } from './components/InputPanel.jsx';
@@ -298,7 +299,7 @@ export default function App() {
                 MAIN ALGORITHM VISUALIZATION AREA (65% Board / 35% Sidebar)
                 ======================================================== */}
             <div className="main-simulation-grid">
-              {/* Left Column (65%): Sudoku Board */}
+              {/* Left Column (65%): Sudoku Board + Controls Directly Below */}
               <div className="simulation-board-column">
                 <SudokuBoard
                   board={displayBoard}
@@ -306,11 +307,9 @@ export default function App() {
                   currentStep={currentStep}
                   userSolvedState={status === 'SOLVED'}
                 />
-              </div>
 
-              {/* Right Column (35%): Controls + Current Step + Output */}
-              <div className="simulation-sidebar-column">
-                <SimulationSidebar
+                {/* Điều Khiển Thuật Toán - 1 hàng ngang, đặt ngay dưới bàn cờ */}
+                <ControlToolbar
                   isPlaying={isPlaying}
                   onTogglePlay={handleTogglePlay}
                   onStepForward={handleStepForward}
@@ -325,7 +324,16 @@ export default function App() {
                   strategy={strategy}
                   onChangeStrategy={handleChangeStrategy}
                   status={status}
+                />
+              </div>
+
+              {/* Right Column (35%): Inspector & Output Panel */}
+              <div className="simulation-sidebar-column">
+                <SimulationSidebar
+                  status={status}
                   currentStep={currentStep}
+                  currentStepIndex={currentStepIndex}
+                  totalSteps={steps.length}
                   allSteps={steps}
                   onSelectStep={handleSeekStep}
                   solvedBoard={solvedBoard || (status === 'SOLVED' ? displayBoard : null)}

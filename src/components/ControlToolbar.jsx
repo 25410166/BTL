@@ -1,4 +1,3 @@
-// Thanh điều khiển mô phỏng gọn gàng chuẩn Pro Dashboard
 import React from 'react';
 import {
   PlayIcon,
@@ -7,7 +6,6 @@ import {
   StepBackIcon,
   RotateCcwIcon,
   ZapIcon,
-  LayersIcon,
 } from './Icons.jsx';
 
 export function ControlToolbar({
@@ -26,129 +24,135 @@ export function ControlToolbar({
   onChangeStrategy,
   status,
 }) {
+  function renderStatusBadge() {
+    switch (status) {
+      case 'RUNNING':
+        return <span className="status-indicator-badge badge-running">● Đang Chạy</span>;
+      case 'PAUSED':
+        return <span className="status-indicator-badge badge-paused">❚❚ Tạm Dừng</span>;
+      case 'SOLVED':
+        return <span className="status-indicator-badge badge-solved">✓ Đã Giải Xong</span>;
+      case 'NO_SOLUTION':
+        return <span className="status-indicator-badge badge-error">✗ Vô Nghiệm</span>;
+      default:
+        return <span className="status-indicator-badge badge-ready">● Sẵn Sàng</span>;
+    }
+  }
+
   return (
-    <div className="control-toolbar-compact">
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
-        {/* Nút hành động chính */}
-        <div className="flex items-center gap-1.5">
-          {/* Nút Play / Pause */}
-          <button
-            className={`btn-control ${isPlaying ? 'btn-ctrl-pause' : 'btn-ctrl-play'}`}
-            onClick={onTogglePlay}
-            disabled={status === 'SOLVED' && currentStepIndex >= totalSteps - 1}
-            title={isPlaying ? 'Tạm dừng mô phỏng' : 'Bắt đầu chạy từng bước'}
-          >
-            {isPlaying ? (
-              <>
-                <PauseIcon className="w-3.5 h-3.5" />
-                <span>Tạm Dừng</span>
-              </>
-            ) : (
-              <>
-                <PlayIcon className="w-3.5 h-3.5" />
-                <span>{currentStepIndex > 0 ? 'Tiếp Tục' : 'Chạy Mô Phỏng'}</span>
-              </>
-            )}
-          </button>
+    <div className="control-bar-single-row-panel">
+      {/* Tiêu đề & trạng thái */}
+      <div className="control-bar-header">
+        <div className="flex items-center gap-2">
+          <span className="card-heading-title">Điều Khiển Thuật Toán</span>
+          <span className="control-sub-badge font-mono">
+            {totalSteps > 0 ? `Bước ${currentStepIndex + 1} / ${totalSteps}` : 'Mô phỏng đệ quy'}
+          </span>
+        </div>
+        {renderStatusBadge()}
+      </div>
 
-          {/* Lùi 1 bước */}
-          <button
-            className="btn-control btn-ctrl-secondary"
-            onClick={onStepBackward}
-            disabled={isPlaying || currentStepIndex <= 0}
-            title="Lùi 1 bước đệ quy"
-          >
-            <StepBackIcon className="w-3.5 h-3.5" />
-          </button>
+      {/* 1. DUY NHẤT 1 HÀNG CHỨA TẤT CẢ CÁC NÚT ĐIỀU KHIỂN & THÔNG SỐ */}
+      <div className="control-actions-single-line">
+        {/* Play / Pause button */}
+        <button
+          className={`btn-single-row ${isPlaying ? 'btn-sr-pause' : 'btn-sr-play'}`}
+          onClick={onTogglePlay}
+          disabled={status === 'SOLVED' && currentStepIndex >= totalSteps - 1}
+          title={isPlaying ? 'Tạm dừng mô phỏng' : 'Bắt đầu chạy mô phỏng'}
+        >
+          {isPlaying ? (
+            <>
+              <PauseIcon size={13} />
+              <span>Tạm Dừng</span>
+            </>
+          ) : (
+            <>
+              <PlayIcon size={13} />
+              <span>{currentStepIndex > 0 ? 'Tiếp Tục' : 'Chạy Mô Phỏng'}</span>
+            </>
+          )}
+        </button>
 
-          {/* Tiến 1 bước */}
-          <button
-            className="btn-control btn-ctrl-secondary"
-            onClick={onStepForward}
-            disabled={isPlaying || (totalSteps > 0 && currentStepIndex >= totalSteps - 1)}
-            title="Tiến 1 bước đệ quy"
-          >
-            <StepForwardIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline text-xs">Từng Bước</span>
-          </button>
+        {/* Step Forward */}
+        <button
+          className="btn-single-row btn-sr-sub"
+          onClick={onStepForward}
+          disabled={isPlaying || (totalSteps > 0 && currentStepIndex >= totalSteps - 1)}
+          title="Tiến 1 bước đệ quy"
+        >
+          <StepForwardIcon size={13} />
+          <span>Tiến 1 Bước</span>
+        </button>
 
-          {/* Đặt lại (Reset) */}
-          <button
-            className="btn-control btn-ctrl-secondary"
-            onClick={onReset}
-            title="Đặt lại trạng thái ban đầu"
-          >
-            <RotateCcwIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline text-xs">Đặt Lại</span>
-          </button>
+        {/* Step Back */}
+        <button
+          className="btn-single-row btn-sr-sub"
+          onClick={onStepBackward}
+          disabled={isPlaying || currentStepIndex <= 0}
+          title="Lùi 1 bước đệ quy"
+        >
+          <StepBackIcon size={13} />
+          <span>Lùi</span>
+        </button>
 
-          {/* Giải tức thì (Instant) */}
-          <button
-            className="btn-control btn-ctrl-instant"
-            onClick={onInstantSolve}
-            title="Giải trực tiếp không qua animation để xem ngay kết quả"
+        {/* Reset */}
+        <button
+          className="btn-single-row btn-sr-sub text-danger-hover"
+          onClick={onReset}
+          title="Đặt lại trạng thái ban đầu"
+        >
+          <RotateCcwIcon size={13} />
+          <span>Reset</span>
+        </button>
+
+        {/* Instant Solve */}
+        <button
+          className="btn-single-row btn-sr-instant"
+          onClick={onInstantSolve}
+          title="Giải tức thì không cần đợi animation"
+        >
+          <ZapIcon size={13} />
+          <span>Giải Tức Thì</span>
+        </button>
+
+        <span className="sr-divider" />
+
+        {/* Strategy Selector */}
+        <div className="sr-param-group">
+          <span className="sr-param-label">Chiến Lược:</span>
+          <select
+            className="sr-select"
+            value={strategy}
+            onChange={e => onChangeStrategy(e.target.value)}
+            disabled={isPlaying}
           >
-            <ZapIcon className="w-3.5 h-3.5 text-accent" />
-            <span>Giải Tức Thì</span>
-          </button>
+            <option value="sequential">Tuần Tự (Chuẩn)</option>
+            <option value="mrv">MRV (Điểm 10)</option>
+          </select>
         </div>
 
-        {/* Lựa chọn Chiến lược & Tốc độ */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Chiến lược */}
-          <div className="flex items-center gap-1.5 text-xs text-secondary">
-            <LayersIcon className="w-3 h-3 text-accent" />
-            <select
-              className="select-custom-compact"
-              value={strategy}
-              onChange={e => onChangeStrategy(e.target.value)}
-              disabled={isPlaying}
-            >
-              <option value="sequential">Backtracking Tuần Tự (Chuẩn đề)</option>
-              <option value="mrv">Backtracking MRV Heuristic (Điểm 10)</option>
-            </select>
-          </div>
+        <span className="sr-divider" />
 
-          {/* Tốc độ slider */}
-          <div className="flex items-center gap-2 text-xs text-secondary">
-            <span>Tốc độ: <strong className="text-primary font-mono">{speedMs}ms</strong></span>
-            <input
-              type="range"
-              min="5"
-              max="500"
-              step="5"
-              value={speedMs}
-              onChange={e => onChangeSpeed(parseInt(e.target.value, 10))}
-              className="range-slider-compact"
-            />
-            <div className="flex gap-1">
-              <button
-                className={`btn-tag-compact ${speedMs === 300 ? 'tag-active' : ''}`}
-                onClick={() => onChangeSpeed(300)}
-              >
-                Chậm
-              </button>
-              <button
-                className={`btn-tag-compact ${speedMs === 50 ? 'tag-active' : ''}`}
-                onClick={() => onChangeSpeed(50)}
-              >
-                Vừa
-              </button>
-              <button
-                className={`btn-tag-compact ${speedMs === 10 ? 'tag-active' : ''}`}
-                onClick={() => onChangeSpeed(10)}
-              >
-                Nhanh
-              </button>
-            </div>
-          </div>
+        {/* Speed Slider */}
+        <div className="sr-param-group">
+          <span className="sr-param-label">Tốc Độ: <strong className="font-mono text-primary">{speedMs}ms</strong></span>
+          <input
+            type="range"
+            min="5"
+            max="500"
+            step="5"
+            value={speedMs}
+            onChange={e => onChangeSpeed(parseInt(e.target.value, 10))}
+            className="sr-slider"
+          />
         </div>
       </div>
 
-      {/* Thanh tua bước (Timeline Scrubber) */}
+      {/* 2. THANH TIẾN TRÌNH (TIMELINE SCRUBBER) GỌN GÀNG DƯỚI HÀNG NÚT */}
       {totalSteps > 0 && (
-        <div className="mt-2.5 pt-2 border-t border-subtle flex items-center gap-3">
-          <span className="text-[11px] text-secondary font-mono whitespace-nowrap">
+        <div className="sr-timeline-row">
+          <span className="sr-timeline-text font-mono">
             Tiến trình: <strong className="text-accent">{currentStepIndex + 1}</strong> / {totalSteps}
           </span>
           <input
@@ -158,9 +162,9 @@ export function ControlToolbar({
             value={currentStepIndex}
             onChange={e => onSeekStep(parseInt(e.target.value, 10))}
             disabled={isPlaying}
-            className="timeline-slider flex-1"
+            className="sr-timeline-bar"
           />
-          <span className="text-[11px] font-mono text-secondary">
+          <span className="sr-timeline-percent font-mono">
             {Math.round(((currentStepIndex + 1) / totalSteps) * 100)}%
           </span>
         </div>

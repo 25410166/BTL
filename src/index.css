@@ -56,6 +56,16 @@ html.light {
   padding: 0;
 }
 
+svg {
+  display: inline-block;
+  vertical-align: middle;
+  width: 14px;
+  height: 14px;
+  max-width: 16px;
+  max-height: 16px;
+  flex-shrink: 0;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-app);
@@ -743,151 +753,206 @@ body {
 .badge-solved { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
 .badge-error { background: rgba(239, 68, 68, 0.15); color: var(--accent-rose); border: 1px solid rgba(239, 68, 68, 0.3); }
 
-/* Control Buttons */
-.control-btn-grid {
+/* ========================================================
+   CONTROL TOOLBAR (Placed Directly Below Sudoku Board - 1 Single Row)
+   ======================================================== */
+.control-bar-single-row-panel {
+  margin-top: 14px;
+  background-color: var(--bg-surface-sub);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 10px;
 }
 
-.btn-primary-action {
-  width: 100%;
+.control-bar-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.btn-primary-action:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.control-sub-badge {
+  font-size: 11px;
+  color: var(--accent-cyan);
+  background: rgba(32, 184, 242, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(32, 184, 242, 0.2);
 }
 
-.btn-play-mode {
-  background: var(--accent-cyan);
-  color: #070B14;
+.control-actions-single-line {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0;
 }
 
-.btn-play-mode:hover:not(:disabled) {
-  filter: brightness(1.1);
-  box-shadow: 0 0 14px rgba(32, 184, 242, 0.4);
-}
-
-.btn-pause-mode {
-  background: var(--accent-amber);
-  color: #070B14;
-}
-
-.btn-group-secondary {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  gap: 6px;
-}
-
-.btn-sec-action {
+/* Compact single-row buttons */
+.btn-single-row {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
   font-size: 11px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: var(--bg-surface-sub);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-sec-action:hover:not(:disabled) {
+  background: var(--bg-surface);
   color: var(--text-primary);
-  background: var(--bg-surface-elevated);
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
 }
 
-.btn-sec-action:disabled {
+.btn-single-row svg {
+  width: 12px;
+  height: 12px;
+  max-width: 12px;
+  max-height: 12px;
+  flex-shrink: 0;
+}
+
+.btn-single-row:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.btn-instant-solve {
+.btn-sr-play {
+  background: var(--accent-cyan);
+  color: #070B14;
+  border-color: var(--accent-cyan);
+  font-weight: 700;
+}
+
+.btn-sr-play:hover:not(:disabled) {
+  filter: brightness(1.1);
+  box-shadow: 0 0 10px rgba(32, 184, 242, 0.4);
+}
+
+.btn-sr-pause {
+  background: var(--accent-amber);
+  color: #070B14;
+  border-color: var(--accent-amber);
+  font-weight: 700;
+}
+
+.btn-sr-pause:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-sr-sub {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.btn-sr-sub:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--accent-cyan);
+  background: var(--bg-surface-elevated);
+}
+
+.btn-sr-reset:hover:not(:disabled),
+.text-danger-hover:hover:not(:disabled) {
+  color: var(--accent-rose);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.btn-sr-instant {
+  background: rgba(32, 184, 242, 0.08);
   color: var(--accent-cyan);
-  border-color: rgba(32, 184, 242, 0.3);
+  border-color: rgba(32, 184, 242, 0.35);
 }
 
-.btn-instant-solve:hover:not(:disabled) {
-  background: rgba(32, 184, 242, 0.12);
+.btn-sr-instant:hover:not(:disabled) {
+  background: rgba(32, 184, 242, 0.18);
+  border-color: var(--accent-cyan);
 }
 
-/* Control Params */
-.control-params-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 8px;
-  background: var(--bg-surface-sub);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
+.sr-divider {
+  width: 1px;
+  height: 18px;
+  background-color: var(--border-subtle);
+  flex-shrink: 0;
+  margin: 0 2px;
 }
 
-.param-item {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.sr-param-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
-.param-label {
-  font-size: 10px;
+.sr-param-label {
+  font-size: 11px;
   color: var(--text-subtle);
-  font-weight: 500;
+  white-space: nowrap;
 }
 
-.select-param {
+.sr-select {
+  height: 28px;
   background: var(--bg-surface);
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 3px 6px;
+  padding: 0 8px;
   font-size: 11px;
+  font-weight: 500;
   outline: none;
+  cursor: pointer;
 }
 
-.slider-param {
-  width: 100%;
+.sr-select:focus {
+  border-color: var(--accent-cyan);
+}
+
+.sr-param-speed {
+  min-width: 130px;
+}
+
+.sr-slider {
+  width: 70px;
   height: 4px;
   accent-color: var(--accent-cyan);
   cursor: pointer;
 }
 
-/* Timeline Scrubber */
-.timeline-scrubber-box {
-  margin-top: 8px;
+/* Timeline scrubber row */
+.sr-timeline-row {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-subtle);
 }
 
-.timeline-info {
-  display: flex;
-  justify-content: space-between;
+.sr-timeline-text {
   font-size: 10px;
-  font-family: var(--font-mono);
   color: var(--text-subtle);
+  white-space: nowrap;
 }
 
-.timeline-slider-bar {
-  width: 100%;
+.sr-timeline-bar {
+  flex: 1;
   height: 4px;
   accent-color: var(--accent-cyan);
   cursor: pointer;
+}
+
+.sr-timeline-percent {
+  font-size: 10px;
+  color: var(--accent-cyan);
+  min-width: 32px;
+  text-align: right;
 }
 
 /* ========================================================
