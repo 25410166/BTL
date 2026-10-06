@@ -546,28 +546,44 @@ body {
   border-right: 2px solid var(--border-box-3x3) !important;
 }
 
-.border-box-bottom {
-  border-bottom: 2px solid var(--border-box-3x3) !important;
-}
-
-/* Active Scan Guides */
-.row-active-scan {
-  background-color: rgba(32, 184, 242, 0.05);
+/* Active Scan & Selection Guides (Hiển thị màu rõ ràng của Hàng & Cột đang chọn) */
+.cell-scan-row {
+  background-color: rgba(32, 184, 242, 0.15) !important;
 }
 
 .cell-scan-col {
+  background-color: rgba(32, 184, 242, 0.15) !important;
+}
+
+.cell-scan-box {
   background-color: rgba(32, 184, 242, 0.05);
 }
 
+.cell-scan-cross {
+  background-color: rgba(32, 184, 242, 0.3) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(32, 184, 242, 0.75);
+  z-index: 4;
+}
+
 .cell-hover-axis {
-  background-color: rgba(32, 184, 242, 0.07);
+  background-color: rgba(32, 184, 242, 0.08);
 }
 
 .cell-selected {
   outline: 2px solid var(--accent-cyan);
   outline-offset: -2px;
-  background-color: rgba(32, 184, 242, 0.18) !important;
-  z-index: 5;
+  background-color: rgba(32, 184, 242, 0.35) !important;
+  box-shadow: 0 0 14px rgba(32, 184, 242, 0.6);
+  z-index: 6;
+}
+
+/* Thước toạ độ (Ruler) khi hàng/cột được chọn */
+.ruler-col-cell.ruler-active,
+.ruler-row-cell.ruler-active {
+  background-color: var(--accent-cyan) !important;
+  color: #070B14 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 8px rgba(32, 184, 242, 0.5);
 }
 
 /* Cell Value Types */
@@ -696,6 +712,7 @@ body {
 .dot-given { background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); }
 .dot-empty-x { background: rgba(245, 158, 11, 0.3); border: 1px solid var(--accent-amber); }
 .dot-active { background: rgba(32, 184, 242, 0.4); border: 1px solid var(--accent-cyan); }
+.dot-scan-axis { background: rgba(32, 184, 242, 0.2); border: 1px solid var(--accent-cyan); }
 .dot-conflict { background: rgba(239, 68, 68, 0.4); border: 1px solid var(--accent-rose); }
 .dot-backtrack { background: rgba(245, 158, 11, 0.4); border: 1px solid var(--accent-amber); }
 .dot-solved { background: rgba(16, 185, 129, 0.4); border: 1px solid var(--accent-emerald); }
@@ -890,6 +907,17 @@ body {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+
+.sr-algo-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: rgba(32, 184, 242, 0.12);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(32, 184, 242, 0.3);
+  letter-spacing: 0.03em;
 }
 
 .sr-param-label {

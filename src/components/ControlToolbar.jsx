@@ -20,8 +20,6 @@ export function ControlToolbar({
   currentStepIndex,
   totalSteps,
   onSeekStep,
-  strategy,
-  onChangeStrategy,
   status,
 }) {
   function renderStatusBadge() {
@@ -118,18 +116,10 @@ export function ControlToolbar({
 
         <span className="sr-divider" />
 
-        {/* Strategy Selector */}
+        {/* Algorithm label (Thuần túy Backtracking) */}
         <div className="sr-param-group">
-          <span className="sr-param-label">Chiến Lược:</span>
-          <select
-            className="sr-select"
-            value={strategy}
-            onChange={e => onChangeStrategy(e.target.value)}
-            disabled={isPlaying}
-          >
-            <option value="sequential">Tuần Tự (Chuẩn)</option>
-            <option value="mrv">MRV (Điểm 10)</option>
-          </select>
+          <span className="sr-param-label">Thuật Toán:</span>
+          <span className="sr-algo-badge font-mono">BACKTRACKING</span>
         </div>
 
         <span className="sr-divider" />

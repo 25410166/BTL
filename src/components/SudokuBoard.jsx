@@ -53,6 +53,10 @@ export function SudokuBoard({
   const stepType = currentStep?.type ?? null;
   const conflicts = currentStep?.conflicts ?? [];
 
+  // Xác định hàng và cột đang được chọn (ưu tiên bước thuật toán, sau đó đến ô người dùng bấm chọn)
+  const targetRow = activeRow !== null ? activeRow : selectedCell.r;
+  const targetCol = activeCol !== null ? activeCol : selectedCell.c;
+
   const conflictMap = new Map();
   conflicts.forEach(cf => {
     conflictMap.set(`${cf.row},${cf.col}`, cf.reason);
@@ -67,11 +71,11 @@ export function SudokuBoard({
           <span className="board-sub-title">Simulation Board</span>
         </div>
 
-        {activeRow !== null && activeCol !== null && (
+        {targetRow !== null && targetCol !== null && (
           <div className="board-scan-indicator">
             <span className="scan-indicator-dot" />
             <span className="scan-indicator-text">
-              Quét Hàng <strong>{activeRow + 1}</strong> · Cột <strong>{activeCol + 1}</strong>
+              {activeRow !== null ? 'Quét Thuật Toán:' : 'Đang Chọn:'} Hàng <strong>{targetRow + 1}</strong> · Cột <strong>{targetCol + 1}</strong>
             </span>
           </div>
         )}
@@ -86,7 +90,7 @@ export function SudokuBoard({
             {Array.from({ length: 9 }).map((_, c) => (
               <div
                 key={c}
-                className={`ruler-col-cell ${activeCol === c ? 'ruler-active' : ''}`}
+                className={`ruler-col-cell ${targetCol === c ? 'ruler-active' : ''}`}
               >
                 {c + 1}
               </div>
@@ -96,7 +100,7 @@ export function SudokuBoard({
           {/* 9 Hàng bàn cờ */}
           <div className="sudoku-cells-box">
             {board.map((row, r) => {
-              const isRowActive = activeRow === r;
+              const isRowActive = targetRow === r;
               return (
                 <div key={r} className={`board-row-wrap ${isRowActive ? 'row-active-scan' : ''}`}>
                   {/* Thước Hàng 1..9 */}
@@ -112,7 +116,15 @@ export function SudokuBoard({
                     const isPrev = prevCell && prevCell.row === r && prevCell.col === c && !isActive;
                     const isSelected = selectedCell.r === r && selectedCell.c === c;
                     const conflictReason = conflictMap.get(coordKey);
-                    const isColActive = activeCol === c;
+                    const isRowTarget = targetRow === r;
+                    const isColTarget = targetCol === c;
+                    const isCross = isRowTarget && isColTarget;
+
+                    const isBoxTarget =
+                      targetRow !== null &&
+                      targetCol !== null &&
+                      Math.floor(targetRow / 3) === Math.floor(r / 3) &&
+                      Math.floor(targetCol / 3) === Math.floor(c / 3);
 
                     const isHoverCross =
                       hoveredCell.r !== null &&
@@ -128,9 +140,11 @@ export function SudokuBoard({
                     if (r % 3 === 2 && r !== 8) cellClasses += ' border-box-bottom';
 
                     if (isHoverCross) cellClasses += ' cell-hover-axis';
+                    if (isBoxTarget) cellClasses += ' cell-scan-box';
+                    if (isRowTarget) cellClasses += ' cell-scan-row';
+                    if (isColTarget) cellClasses += ' cell-scan-col';
+                    if (isCross) cellClasses += ' cell-scan-cross';
                     if (isSelected) cellClasses += ' cell-selected';
-                    if (isRowActive) cellClasses += ' cell-scan-row';
-                    if (isColActive) cellClasses += ' cell-scan-col';
 
                     if (isPrev) cellClasses += ' cell-prev-step';
 
@@ -210,6 +224,7 @@ export function SudokuBoard({
         <span className="legend-entry"><span className="legend-dot dot-given" /> Số cho sẵn</span>
         <span className="legend-entry"><span className="legend-dot dot-empty-x" /> Ô trống 'X'</span>
         <span className="legend-entry"><span className="legend-dot dot-active" /> Đang xét</span>
+        <span className="legend-entry"><span className="legend-dot dot-scan-axis" /> Hàng/Cột chọn</span>
         <span className="legend-entry"><span className="legend-dot dot-conflict" /> Xung đột</span>
         <span className="legend-entry"><span className="legend-dot dot-backtrack" /> Quay lui</span>
         <span className="legend-entry"><span className="legend-dot dot-solved" /> Đã giải</span>

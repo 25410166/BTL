@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Navbar } from './components/Navbar.jsx';
-import { StatusBar } from './components/StatusBar.jsx';
 import { SudokuBoard } from './components/SudokuBoard.jsx';
 import { ControlToolbar } from './components/ControlToolbar.jsx';
 import { SimulationSidebar } from './components/SimulationSidebar.jsx';
 import { TestcaseGrid } from './components/TestcaseGrid.jsx';
 import { InputPanel } from './components/InputPanel.jsx';
-import { BenchmarkSection } from './components/BenchmarkSection.jsx';
-import { PlayPracticeMode } from './components/PlayPracticeMode.jsx';
 import { ProblemSpecModal } from './components/ProblemSpecModal.jsx';
-import { TheoryReportModal } from './components/TheoryReportModal.jsx';
 import { PRESET_TESTCASES } from './data/presetTestcases.js';
 import {
   cloneBoard,
@@ -21,19 +17,13 @@ import {
   generateBacktrackingTrace,
   solveBacktrackingInstant,
 } from './algorithms/sudokuBacktracking.js';
-import {
-  generateMRVTrace,
-  solveBacktrackingMRVInstant,
-} from './algorithms/sudokuMRV.js';
 import { fireConfetti } from './utils/confetti.js';
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [activeView, setActiveView] = useState('visualizer'); // 'visualizer' | 'play' | 'benchmark'
 
   // Modals
   const [isProblemSpecOpen, setIsProblemSpecOpen] = useState(false);
-  const [isReportOpen, setIsReportOpen] = useState(false);
 
   // Sudoku Board State
   const initialPreset = PRESET_TESTCASES[0];
@@ -51,7 +41,6 @@ export default function App() {
   }, [initialEmptyCoords]);
 
   // Simulation State
-  const [strategy, setStrategy] = useState('sequential'); // 'sequential' | 'mrv'
   const [speedMs, setSpeedMs] = useState(50);
   const [isPlaying, setIsPlaying] = useState(false);
   const [steps, setSteps] = useState([]);
@@ -73,7 +62,7 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Sinh vết thực thi
+  // Sinh vết thực thi Backtracking thuần túy
   function ensureStepsReady() {
     if (steps.length > 0) return steps;
 
@@ -83,10 +72,7 @@ export default function App() {
       return [];
     }
 
-    const traceResult =
-      strategy === 'mrv'
-        ? generateMRVTrace(initialBoard)
-        : generateBacktrackingTrace(initialBoard);
+    const traceResult = generateBacktrackingTrace(initialBoard);
 
     setSteps(traceResult.steps);
     setSolvedBoard(traceResult.finalBoard);
@@ -188,15 +174,12 @@ export default function App() {
     setDisplayBoard(cloneBoard(initialBoard));
   }
 
-  // Giải tức thì
+  // Giải tức thì (Backtracking thuần túy)
   function handleInstantSolve() {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
 
-    const result =
-      strategy === 'mrv'
-        ? solveBacktrackingMRVInstant(initialBoard)
-        : solveBacktrackingInstant(initialBoard);
+    const result = solveBacktrackingInstant(initialBoard);
 
     if (result.solved && result.board) {
       setDisplayBoard(result.board);
@@ -259,123 +242,85 @@ export default function App() {
     setBoardTitle(title);
   }
 
-  function handleChangeStrategy(newStrat) {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setIsPlaying(false);
-    setStatus('IDLE');
-    setStrategy(newStrat);
-    setSteps([]);
-    setCurrentStepIndex(0);
-    setDisplayBoard(cloneBoard(initialBoard));
-  }
-
   const currentStep = steps[currentStepIndex] || null;
 
   return (
     <div className="dashboard-app-root">
       {/* 1. HEADER (56px) */}
       <Navbar
-        activeView={activeView}
-        onChangeView={setActiveView}
         onOpenProblemSpec={() => setIsProblemSpecOpen(true)}
-        onOpenReport={() => setIsReportOpen(true)}
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode(prev => !prev)}
       />
 
-      {/* 2. STATUS BAR (44px) */}
-      <StatusBar
-        boardTitle={boardTitle}
-        emptyCount={initialEmptyCoords.length}
-        strategy={strategy}
-        onOpenProblemSpec={() => setIsProblemSpecOpen(true)}
-      />
-
-      {/* 3. MAIN DASHBOARD CONTENT */}
+      {/* 2. MAIN DASHBOARD CONTENT */}
       <main className="dashboard-main-container">
-        {activeView === 'visualizer' && (
-          <div className="visualizer-content-flow">
-            {/* ========================================================
-                MAIN ALGORITHM VISUALIZATION AREA (65% Board / 35% Sidebar)
-                ======================================================== */}
-            <div className="main-simulation-grid">
-              {/* Left Column (65%): Sudoku Board + Controls Directly Below */}
-              <div className="simulation-board-column">
-                <SudokuBoard
-                  board={displayBoard}
-                  initialEmptySet={initialEmptySet}
-                  currentStep={currentStep}
-                  userSolvedState={status === 'SOLVED'}
-                />
+        <div className="visualizer-content-flow">
+          {/* ========================================================
+              MAIN ALGORITHM VISUALIZATION AREA (65% Board / 35% Sidebar)
+              ======================================================== */}
+          <div className="main-simulation-grid">
+            {/* Left Column (65%): Sudoku Board + Controls Directly Below */}
+            <div className="simulation-board-column">
+              <SudokuBoard
+                board={displayBoard}
+                initialEmptySet={initialEmptySet}
+                currentStep={currentStep}
+                userSolvedState={status === 'SOLVED'}
+              />
 
-                {/* Điều Khiển Thuật Toán - 1 hàng ngang, đặt ngay dưới bàn cờ */}
-                <ControlToolbar
-                  isPlaying={isPlaying}
-                  onTogglePlay={handleTogglePlay}
-                  onStepForward={handleStepForward}
-                  onStepBackward={handleStepBackward}
-                  onReset={handleReset}
-                  onInstantSolve={handleInstantSolve}
-                  speedMs={speedMs}
-                  onChangeSpeed={setSpeedMs}
-                  currentStepIndex={currentStepIndex}
-                  totalSteps={steps.length}
-                  onSeekStep={handleSeekStep}
-                  strategy={strategy}
-                  onChangeStrategy={handleChangeStrategy}
-                  status={status}
-                />
-              </div>
-
-              {/* Right Column (35%): Inspector & Output Panel */}
-              <div className="simulation-sidebar-column">
-                <SimulationSidebar
-                  status={status}
-                  currentStep={currentStep}
-                  currentStepIndex={currentStepIndex}
-                  totalSteps={steps.length}
-                  allSteps={steps}
-                  onSelectStep={handleSeekStep}
-                  solvedBoard={solvedBoard || (status === 'SOLVED' ? displayBoard : null)}
-                  initialEmptyCoords={initialEmptyCoords}
-                  executionStats={executionStats}
-                />
-              </div>
+              {/* Điều Khiển Thuật Toán - 1 hàng ngang, đặt ngay dưới bàn cờ */}
+              <ControlToolbar
+                isPlaying={isPlaying}
+                onTogglePlay={handleTogglePlay}
+                onStepForward={handleStepForward}
+                onStepBackward={handleStepBackward}
+                onReset={handleReset}
+                onInstantSolve={handleInstantSolve}
+                speedMs={speedMs}
+                onChangeSpeed={setSpeedMs}
+                currentStepIndex={currentStepIndex}
+                totalSteps={steps.length}
+                onSeekStep={handleSeekStep}
+                status={status}
+              />
             </div>
 
-            {/* ========================================================
-                TESTCASE SELECTOR (Grid layout 3-4 cards / row)
-                ======================================================== */}
-            <TestcaseGrid
-              selectedId={selectedPresetId}
-              onSelectTestcase={handleSelectTestcase}
-              onRandomGenerate={handleRandomGenerate}
-              disabled={isPlaying}
-            />
-
-            {/* ========================================================
-                INPUT / TESTCASE DETAILS (Segmented tools)
-                ======================================================== */}
-            <InputPanel
-              currentBoard={initialBoard}
-              onApplyBoard={handleApplyCustomBoard}
-              disabled={isPlaying}
-            />
+            {/* Right Column (35%): Inspector & Output Panel */}
+            <div className="simulation-sidebar-column">
+              <SimulationSidebar
+                status={status}
+                currentStep={currentStep}
+                currentStepIndex={currentStepIndex}
+                totalSteps={steps.length}
+                allSteps={steps}
+                onSelectStep={handleSeekStep}
+                solvedBoard={solvedBoard || (status === 'SOLVED' ? displayBoard : null)}
+                initialEmptyCoords={initialEmptyCoords}
+                executionStats={executionStats}
+              />
+            </div>
           </div>
-        )}
 
-        {/* View 2: Play Mode */}
-        {activeView === 'play' && (
-          <PlayPracticeMode
-            initialBoard={initialBoard}
-            initialEmptySet={initialEmptySet}
+          {/* ========================================================
+              TESTCASE SELECTOR (Grid layout 3-4 cards / row)
+              ======================================================== */}
+          <TestcaseGrid
+            selectedId={selectedPresetId}
+            onSelectTestcase={handleSelectTestcase}
+            onRandomGenerate={handleRandomGenerate}
+            disabled={isPlaying}
           />
-        )}
 
-        {/* View 3: Benchmark Mode */}
-        {activeView === 'benchmark' && (
-          <BenchmarkSection />
-        )}
+          {/* ========================================================
+              INPUT / TESTCASE DETAILS (Segmented tools)
+              ======================================================== */}
+          <InputPanel
+            currentBoard={initialBoard}
+            onApplyBoard={handleApplyCustomBoard}
+            disabled={isPlaying}
+          />
+        </div>
       </main>
 
       {/* Footer */}
@@ -383,7 +328,6 @@ export default function App() {
         <div className="dashboard-footer-inner">
           <span>BTL Thiết Kế & Đánh Giá Thuật Toán: <strong>Sudoku 9×9 Backtracking Solver</strong></span>
           <div className="flex gap-4">
-            <button onClick={() => setIsReportOpen(true)} className="footer-link">Báo Cáo Lý Thuyết</button>
             <button onClick={() => setIsProblemSpecOpen(true)} className="footer-link">Đặc Tả Đề Bài</button>
           </div>
         </div>
@@ -394,10 +338,6 @@ export default function App() {
         isOpen={isProblemSpecOpen}
         onClose={() => setIsProblemSpecOpen(false)}
         onLoadSample={() => handleSelectTestcase(PRESET_TESTCASES[0])}
-      />
-      <TheoryReportModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
       />
     </div>
   );

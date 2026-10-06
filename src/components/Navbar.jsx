@@ -1,19 +1,12 @@
 import React from 'react';
 import {
-  SparklesIcon,
   BookOpenIcon,
-  BarChartIcon,
-  GamepadIcon,
   MoonIcon,
   SunIcon,
-  LayersIcon,
 } from './Icons.jsx';
 
 export function Navbar({
-  activeView,
-  onChangeView,
   onOpenProblemSpec,
-  onOpenReport,
   isDarkMode,
   onToggleTheme,
 }) {
@@ -24,52 +17,18 @@ export function Navbar({
         <div className="navbar-brand">
           <div className="logo-badge">9×9</div>
           <span className="navbar-title">Sudoku Backtracking Solver</span>
-          <span className="navbar-tag">Academic Tool</span>
+          <span className="navbar-tag">Quay Lui Thuần Túy</span>
         </div>
-
-        {/* Center/Right: Navigation Tabs */}
-        <nav className="navbar-nav">
-          <button
-            className={`nav-tab ${activeView === 'visualizer' ? 'nav-tab-active' : ''}`}
-            onClick={() => onChangeView('visualizer')}
-          >
-            <LayersIcon className="w-3.5 h-3.5" />
-            <span>Mô Phỏng</span>
-          </button>
-          <button
-            className={`nav-tab ${activeView === 'play' ? 'nav-tab-active' : ''}`}
-            onClick={() => onChangeView('play')}
-          >
-            <GamepadIcon className="w-3.5 h-3.5" />
-            <span>Tự Giải</span>
-          </button>
-          <button
-            className={`nav-tab ${activeView === 'benchmark' ? 'nav-tab-active' : ''}`}
-            onClick={() => onChangeView('benchmark')}
-          >
-            <BarChartIcon className="w-3.5 h-3.5" />
-            <span>Đối Sánh</span>
-          </button>
-        </nav>
 
         {/* Right: Quick Actions */}
         <div className="navbar-actions">
           <button
             className="action-btn"
             onClick={onOpenProblemSpec}
-            title="Xem Mô tả bài toán, Input, Output & Ví dụ gốc"
+            title="Xem Mô tả bài toán, Input, Output & Ví dụ gốc từ đề thi"
           >
             <BookOpenIcon className="w-3.5 h-3.5 text-accent" />
-            <span className="hidden sm:inline">Đề Bài & Output</span>
-          </button>
-
-          <button
-            className="action-btn action-btn-purple"
-            onClick={onOpenReport}
-            title="Xem Báo cáo nghiên cứu thuật toán"
-          >
-            <SparklesIcon className="w-3.5 h-3.5 text-purple" />
-            <span className="hidden sm:inline">Báo Cáo Lý Thuyết</span>
+            <span>Đặc Tả Đề Bài</span>
           </button>
 
           <button
