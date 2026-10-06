@@ -6,6 +6,7 @@ import { SimulationSidebar } from './components/SimulationSidebar.jsx';
 import { TestcaseGrid } from './components/TestcaseGrid.jsx';
 import { InputPanel } from './components/InputPanel.jsx';
 import { ProblemSpecModal } from './components/ProblemSpecModal.jsx';
+import { UserGuideModal } from './components/UserGuideModal.jsx';
 import { PRESET_TESTCASES } from './data/presetTestcases.js';
 import {
   cloneBoard,
@@ -40,6 +41,7 @@ export default function App() {
 
   // Modals
   const [isProblemSpecOpen, setIsProblemSpecOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // Sudoku Board State
   const initialPreset = PRESET_TESTCASES[0];
@@ -298,6 +300,7 @@ export default function App() {
       {/* 1. HEADER (56px) */}
       <Navbar
         onOpenProblemSpec={() => setIsProblemSpecOpen(true)}
+        onOpenGuide={() => setIsGuideOpen(true)}
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode(prev => !prev)}
       />
@@ -380,6 +383,7 @@ export default function App() {
           <span>BTL Thiết Kế & Đánh Giá Thuật Toán: <strong>Sudoku 9×9 Backtracking Solver</strong></span>
           <div className="flex gap-4">
             <button onClick={() => setIsProblemSpecOpen(true)} className="footer-link">Đặc Tả Đề Bài</button>
+            <button onClick={() => setIsGuideOpen(true)} className="footer-link">Hướng Dẫn</button>
           </div>
         </div>
       </footer>
@@ -389,6 +393,10 @@ export default function App() {
         isOpen={isProblemSpecOpen}
         onClose={() => setIsProblemSpecOpen(false)}
         onLoadSample={() => handleSelectTestcase(PRESET_TESTCASES[0])}
+      />
+      <UserGuideModal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
       />
     </div>
   );

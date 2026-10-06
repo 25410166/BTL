@@ -179,3 +179,14 @@ export function LightbulbIcon({ className = '', size = 14 }) {
     </svg>
   );
 }
+
+export function HelpCircleIcon({ className = '', size = 14 }) {
+  return (
+    <svg width={size} height={size} style={{ width: size, height: size, flexShrink: 0 }} className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <circle cx="12" cy="12" r="9" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" strokeWidth={3} strokeLinecap="round" />
+    </svg>
+  );
+}
+

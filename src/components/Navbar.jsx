@@ -1,12 +1,14 @@
 import React from 'react';
 import {
   BookOpenIcon,
+  HelpCircleIcon,
   MoonIcon,
   SunIcon,
 } from './Icons.jsx';
 
 export function Navbar({
   onOpenProblemSpec,
+  onOpenGuide,
   isDarkMode,
   onToggleTheme,
 }) {
@@ -28,6 +30,15 @@ export function Navbar({
           >
             <BookOpenIcon className="w-3.5 h-3.5 text-accent" />
             <span>Đặc Tả Đề Bài</span>
+          </button>
+
+          <button
+            className="action-btn"
+            onClick={onOpenGuide}
+            title="Xem hướng dẫn các bước sử dụng website"
+          >
+            <HelpCircleIcon className="w-3.5 h-3.5 text-warning" />
+            <span>Hướng Dẫn</span>
           </button>
 
           <button
