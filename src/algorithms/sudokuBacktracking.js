@@ -71,7 +71,7 @@ export function solveBacktrackingInstant(initialBoard) {
  * @param {number} maxSteps Giới hạn an toàn số bước ghi nhận
  * @returns {Array<object>} Danh sách các snapshot trạng thái
  */
-export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
+export function generateBacktrackingTrace(initialBoard, maxSteps = Infinity) {
   const board = cloneBoard(initialBoard);
   const steps = [];
   const startTime = performance.now();
@@ -236,7 +236,7 @@ export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
   const solved = solve(0);
   stats.executionTimeMs = parseFloat((performance.now() - startTime).toFixed(3));
 
-  if (!solved && steps.length < maxSteps) {
+  if (!solved) {
     recordStep('NO_SOLUTION', {
       message: 'Không tìm thấy lời giải hợp lệ cho Sudoku này (Bài toán vô nghiệm).',
       transitionNote: 'Vô nghiệm',

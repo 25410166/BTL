@@ -94,7 +94,7 @@ export function solveBacktrackingMRVInstant(initialBoard) {
 /**
  * Tạo vết thực thi từng bước cho Backtracking MRV
  */
-export function generateMRVTrace(initialBoard, maxSteps = 15000) {
+export function generateMRVTrace(initialBoard, maxSteps = Infinity) {
   const board = cloneBoard(initialBoard);
   const steps = [];
   const startTime = performance.now();
@@ -226,7 +226,7 @@ export function generateMRVTrace(initialBoard, maxSteps = 15000) {
   const solved = solve(0);
   stats.executionTimeMs = parseFloat((performance.now() - startTime).toFixed(3));
 
-  if (!solved && steps.length < maxSteps) {
+  if (!solved) {
     recordStep('NO_SOLUTION', {
       message: 'Không tìm thấy lời giải hợp lệ cho Sudoku này.',
     });

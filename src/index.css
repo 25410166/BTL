@@ -992,7 +992,51 @@ body {
 }
 
 .sr-param-speed {
-  min-width: 130px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sr-speed-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+  transition: border-color 0.15s;
+}
+
+.sr-speed-box:focus-within {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 6px rgba(32, 184, 242, 0.3);
+}
+
+.sr-speed-input {
+  width: 36px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  color: var(--accent-cyan);
+  font-weight: 700;
+  font-size: 11px;
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.sr-speed-input::-webkit-outer-spin-button,
+.sr-speed-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.sr-speed-unit {
+  font-size: 10px;
+  color: var(--text-subtle);
+  padding-right: 2px;
+  font-weight: 500;
 }
 
 .sr-slider {

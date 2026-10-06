@@ -136,17 +136,36 @@ export function ControlToolbar({
 
         <span className="sr-divider" />
 
-        {/* Speed Slider */}
-        <div className="sr-param-group">
-          <span className="sr-param-label">Tốc Độ: <strong className="font-mono text-primary">{speedMs}ms</strong></span>
+        {/* Speed Input & Slider */}
+        <div className="sr-param-group sr-param-speed">
+          <span className="sr-param-label">Tốc Độ:</span>
+          <div className="sr-speed-box">
+            <input
+              type="number"
+              min="0"
+              max="2000"
+              step="5"
+              value={speedMs}
+              onChange={e => {
+                const val = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
+                if (!isNaN(val)) {
+                  onChangeSpeed(Math.max(0, Math.min(val, 2000)));
+                }
+              }}
+              className="sr-speed-input font-mono"
+              title="Nhập số ms delay mỗi bước (0 = chạy cực nhanh)"
+            />
+            <span className="sr-speed-unit font-mono">ms</span>
+          </div>
           <input
             type="range"
-            min="5"
+            min="0"
             max="500"
             step="5"
-            value={speedMs}
+            value={Math.min(speedMs, 500)}
             onChange={e => onChangeSpeed(parseInt(e.target.value, 10))}
             className="sr-slider"
+            title="Kéo thanh trượt để thay đổi tốc độ"
           />
         </div>
       </div>
