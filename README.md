@@ -1,6 +1,8 @@
 # BÁO CÁO BÀI TẬP LỚN: GIẢI BÀI TOÁN SUDOKU 9×9 BẰNG KỸ THUẬT QUAY LUI & CÁC THUẬT TOÁN TỐI ƯU HÓA CAO CẤP
 
 > **Môn học:** Thiết kế & Đánh giá Thuật toán  
+> **Trải nghiệm trực tuyến (Live Demo):** **[https://25410166.github.io/BTL/](https://25410166.github.io/BTL/)**  
+> **GitHub Repository:** **[https://github.com/25410166/BTL](https://github.com/25410166/BTL)**  
 > **Công nghệ:** React 19 + Vite 8 (Toàn bộ dữ liệu xử lý Local 100%, phản hồi tức thời)  
 > **Mục tiêu:** Đáp ứng trọn vẹn tiêu chí đánh giá xuất sắc (Điểm 10): Hoàn thiện demo, Trực quan hóa từng bước, Bộ testcase quy mô, Báo cáo học thuật chi tiết và Tích hợp 5 thuật toán giải đố hiệu năng cao.
 
