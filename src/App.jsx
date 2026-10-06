@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Navbar } from './components/Navbar';
-import { SudokuBoard } from './components/SudokuBoard';
-import { ControlToolbar } from './components/ControlToolbar';
-import { TestcaseQuickBar } from './components/TestcaseQuickBar';
-import { StepExecutionTrace } from './components/StepExecutionTrace';
-import { InputSection } from './components/InputSection';
-import { OutputSection } from './components/OutputSection';
-import { BenchmarkSection } from './components/BenchmarkSection';
-import { PlayPracticeMode } from './components/PlayPracticeMode';
-import { ProblemSpecModal } from './components/ProblemSpecModal';
-import { TheoryReportModal } from './components/TheoryReportModal';
+import { Navbar } from './components/Navbar.jsx';
+import { StatusBar } from './components/StatusBar.jsx';
+import { SudokuBoard } from './components/SudokuBoard.jsx';
+import { SimulationSidebar } from './components/SimulationSidebar.jsx';
+import { TestcaseGrid } from './components/TestcaseGrid.jsx';
+import { InputPanel } from './components/InputPanel.jsx';
+import { BenchmarkSection } from './components/BenchmarkSection.jsx';
+import { PlayPracticeMode } from './components/PlayPracticeMode.jsx';
+import { ProblemSpecModal } from './components/ProblemSpecModal.jsx';
+import { TheoryReportModal } from './components/TheoryReportModal.jsx';
 import { PRESET_TESTCASES } from './data/presetTestcases.js';
 import {
   cloneBoard,
@@ -26,7 +25,6 @@ import {
   solveBacktrackingMRVInstant,
 } from './algorithms/sudokuMRV.js';
 import { fireConfetti } from './utils/confetti.js';
-import { CheckCircleIcon, SparklesIcon, LayersIcon } from './components/Icons.jsx';
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -43,7 +41,7 @@ export default function App() {
   const [boardTitle, setBoardTitle] = useState(initialPreset.name);
   const [displayBoard, setDisplayBoard] = useState(() => cloneBoard(initialPreset.board));
 
-  // Tọa độ các ô ban đầu mang ký tự 'X'
+  // Tọa độ các ô mang ký tự 'X'
   const initialEmptyCoords = useMemo(() => getEmptyCells(initialBoard), [initialBoard]);
   const initialEmptySet = useMemo(() => {
     const s = new Set();
@@ -51,7 +49,7 @@ export default function App() {
     return s;
   }, [initialEmptyCoords]);
 
-  // Visualizer Execution State
+  // Simulation State
   const [strategy, setStrategy] = useState('sequential'); // 'sequential' | 'mrv'
   const [speedMs, setSpeedMs] = useState(50);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -63,7 +61,7 @@ export default function App() {
 
   const timerRef = useRef(null);
 
-  // Dark/Light mode class
+  // Sync theme
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -74,7 +72,7 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Đảm bảo trace steps sẵn sàng
+  // Sinh vết thực thi
   function ensureStepsReady() {
     if (steps.length > 0) return steps;
 
@@ -95,7 +93,7 @@ export default function App() {
     return traceResult.steps;
   }
 
-  // Play / Pause loop
+  // Chạy hoặc tạm dừng
   function handleTogglePlay() {
     if (isPlaying) {
       setIsPlaying(false);
@@ -110,7 +108,7 @@ export default function App() {
     }
   }
 
-  // Timer animation loop
+  // Timer loop
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -211,7 +209,7 @@ export default function App() {
     }
   }
 
-  // Chọn testcase từ QuickBar hoặc InputSection
+  // Chọn testcase
   function handleSelectTestcase(testcase) {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
@@ -227,9 +225,9 @@ export default function App() {
     setBoardTitle(testcase.name);
   }
 
-  // Sinh đề ngẫu nhiên
+  // Sinh ngẫu nhiên
   function handleRandomGenerate() {
-    const { board } = generateRandomSudoku(5); // chuẩn 5 ô X
+    const { board } = generateRandomSudoku(5);
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
     setStatus('IDLE');
@@ -244,7 +242,7 @@ export default function App() {
     setBoardTitle('Sinh Ngẫu Nhiên (5 ô X)');
   }
 
-  // Nạp ma trận tự do từ InputSection
+  // Nhập ma trận tự do
   function handleApplyCustomBoard(newBoard, title) {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
@@ -273,8 +271,8 @@ export default function App() {
   const currentStep = steps[currentStepIndex] || null;
 
   return (
-    <div className="app-shell flex flex-col min-h-screen">
-      {/* 1. Header gọn gàng */}
+    <div className="dashboard-app-root">
+      {/* 1. HEADER (56px) */}
       <Navbar
         activeView={activeView}
         onChangeView={setActiveView}
@@ -284,68 +282,35 @@ export default function App() {
         onToggleTheme={() => setIsDarkMode(prev => !prev)}
       />
 
-      {/* 2. Thân chính ứng dụng */}
-      <main className="main-content flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 space-y-4">
+      {/* 2. STATUS BAR (44px) */}
+      <StatusBar
+        boardTitle={boardTitle}
+        emptyCount={initialEmptyCoords.length}
+        strategy={strategy}
+        onOpenProblemSpec={() => setIsProblemSpecOpen(true)}
+      />
+
+      {/* 3. MAIN DASHBOARD CONTENT */}
+      <main className="dashboard-main-container">
         {activeView === 'visualizer' && (
-          <div className="space-y-4">
-            {/* Context Bar gọn nhẹ */}
-            <div className="context-bar">
-              <div className="flex items-center gap-2">
-                <span className="context-label">Đang nạp:</span>
-                <strong className="text-primary text-xs">{boardTitle}</strong>
-                <span className="badge-mini-x">{initialEmptyCoords.length} ô 'X'</span>
-                {initialEmptyCoords.length <= 5 ? (
-                  <span className="badge-mini-exam">Chuẩn Đề (≤ 5 ô X)</span>
-                ) : (
-                  <span className="badge-mini-expand">Mở Rộng</span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3 text-[11px] text-secondary">
-                <span>Thuật toán: <strong className="text-accent">100% Backtracking</strong></span>
-                <button
-                  className="text-accent hover:underline cursor-pointer"
-                  onClick={() => setIsProblemSpecOpen(true)}
-                >
-                  Xem Đề Bài Gốc
-                </button>
-              </div>
-            </div>
-
-            {/* BỐ CỤC STUDIO 2 CỘT: Cột Trái Bàn Cờ, Cột Phải Bộ Theo Dõi */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-              {/* CỘT TRÁI (7/12): Bàn cờ + Thanh testcase + Điều khiển */}
-              <div className="lg:col-span-7 flex flex-col space-y-3">
-                {/* 1. Thanh chọn testcase 1-click trực tiếp trên bàn cờ */}
-                <TestcaseQuickBar
-                  selectedId={selectedPresetId}
-                  onSelectTestcase={handleSelectTestcase}
-                  onRandomGenerate={handleRandomGenerate}
-                  disabled={isPlaying}
+          <div className="visualizer-content-flow">
+            {/* ========================================================
+                MAIN ALGORITHM VISUALIZATION AREA (65% Board / 35% Sidebar)
+                ======================================================== */}
+            <div className="main-simulation-grid">
+              {/* Left Column (65%): Sudoku Board */}
+              <div className="simulation-board-column">
+                <SudokuBoard
+                  board={displayBoard}
+                  initialEmptySet={initialEmptySet}
+                  currentStep={currentStep}
+                  userSolvedState={status === 'SOLVED'}
                 />
+              </div>
 
-                {/* 2. Bàn cờ Sudoku 9x9 */}
-                <div className="board-center-deck">
-                  <SudokuBoard
-                    board={displayBoard}
-                    initialEmptySet={initialEmptySet}
-                    currentStep={currentStep}
-                    userSolvedState={status === 'SOLVED'}
-                  />
-
-                  {/* Chú giải màu sắc nhỏ gọn */}
-                  <div className="board-mini-legend">
-                    <span className="legend-item"><span className="legend-box box-given" /> Cho sẵn</span>
-                    <span className="legend-item"><span className="legend-box box-x" /> Ô 'X'</span>
-                    <span className="legend-item"><span className="legend-box box-active" /> Đang xét</span>
-                    <span className="legend-item"><span className="legend-box box-conflict" /> Xung đột</span>
-                    <span className="legend-item"><span className="legend-box box-backtrack" /> Quay lui</span>
-                    <span className="legend-item"><span className="legend-box box-solved" /> Đã giải</span>
-                  </div>
-                </div>
-
-                {/* 3. Thanh điều khiển mô phỏng */}
-                <ControlToolbar
+              {/* Right Column (35%): Controls + Current Step + Output */}
+              <div className="simulation-sidebar-column">
+                <SimulationSidebar
                   isPlaying={isPlaying}
                   onTogglePlay={handleTogglePlay}
                   onStepForward={handleStepForward}
@@ -360,43 +325,38 @@ export default function App() {
                   strategy={strategy}
                   onChangeStrategy={handleChangeStrategy}
                   status={status}
-                />
-              </div>
-
-              {/* CỘT PHẢI (5/12): Bộ theo dõi chuyển ô & Dòng/cột + Quick Output */}
-              <div className="lg:col-span-5 flex flex-col space-y-3">
-                <StepExecutionTrace
                   currentStep={currentStep}
-                  currentStepIndex={currentStepIndex}
-                  totalSteps={steps.length}
                   allSteps={steps}
                   onSelectStep={handleSeekStep}
-                />
-
-                {/* Quick Output Preview */}
-                <OutputSection
                   solvedBoard={solvedBoard || (status === 'SOLVED' ? displayBoard : null)}
                   initialEmptyCoords={initialEmptyCoords}
-                  stats={executionStats}
-                  isSolved={status === 'SOLVED'}
-                  isUnsolvable={status === 'NO_SOLUTION'}
-                  status={status}
+                  executionStats={executionStats}
                 />
               </div>
             </div>
 
-            {/* Mục Nhập dữ liệu nâng cao (Nhập text ma trận, file .txt) */}
-            <div className="pt-2">
-              <InputSection
-                currentBoard={initialBoard}
-                onApplyBoard={handleApplyCustomBoard}
-                disabled={isPlaying}
-              />
-            </div>
+            {/* ========================================================
+                TESTCASE SELECTOR (Grid layout 3-4 cards / row)
+                ======================================================== */}
+            <TestcaseGrid
+              selectedId={selectedPresetId}
+              onSelectTestcase={handleSelectTestcase}
+              onRandomGenerate={handleRandomGenerate}
+              disabled={isPlaying}
+            />
+
+            {/* ========================================================
+                INPUT / TESTCASE DETAILS (Segmented tools)
+                ======================================================== */}
+            <InputPanel
+              currentBoard={initialBoard}
+              onApplyBoard={handleApplyCustomBoard}
+              disabled={isPlaying}
+            />
           </div>
         )}
 
-        {/* Chế độ Play & Practice */}
+        {/* View 2: Play Mode */}
         {activeView === 'play' && (
           <PlayPracticeMode
             initialBoard={initialBoard}
@@ -404,19 +364,19 @@ export default function App() {
           />
         )}
 
-        {/* Chế độ Đối sánh thuật toán */}
+        {/* View 3: Benchmark Mode */}
         {activeView === 'benchmark' && (
           <BenchmarkSection />
         )}
       </main>
 
       {/* Footer */}
-      <footer className="footer-compact">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-[11px] text-secondary">
-          <span>BTL Thiết Kế Thuật Toán: <strong>Sudoku 9×9 Backtracking Solver</strong></span>
+      <footer className="dashboard-footer">
+        <div className="dashboard-footer-inner">
+          <span>BTL Thiết Kế & Đánh Giá Thuật Toán: <strong>Sudoku 9×9 Backtracking Solver</strong></span>
           <div className="flex gap-4">
-            <button onClick={() => setIsReportOpen(true)} className="hover:text-accent">Báo Cáo Lý Thuyết</button>
-            <button onClick={() => setIsProblemSpecOpen(true)} className="hover:text-accent">Đề Bài & Output</button>
+            <button onClick={() => setIsReportOpen(true)} className="footer-link">Báo Cáo Lý Thuyết</button>
+            <button onClick={() => setIsProblemSpecOpen(true)} className="footer-link">Đặc Tả Đề Bài</button>
           </div>
         </div>
       </footer>

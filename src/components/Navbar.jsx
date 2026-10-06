@@ -1,4 +1,3 @@
-// Navbar chuẩn Pro Developer gọn nhẹ, hiện đại
 import React from 'react';
 import {
   SparklesIcon,
@@ -19,41 +18,33 @@ export function Navbar({
   onToggleTheme,
 }) {
   return (
-    <header className="navbar-container">
-      <div className="navbar-inner max-w-7xl mx-auto px-4 flex items-center justify-between h-12">
-        {/* Logo & Tiêu đề */}
-        <div className="flex items-center gap-2.5">
-          <div className="logo-badge">
-            <span>9×9</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm text-primary tracking-tight">
-                Sudoku Backtracking Solver
-              </span>
-              <span className="badge-mini-accent hidden sm:inline-block">Điểm 10</span>
-            </div>
-          </div>
+    <header className="navbar-root">
+      <div className="navbar-container">
+        {/* Left: Brand */}
+        <div className="navbar-brand">
+          <div className="logo-badge">9×9</div>
+          <span className="navbar-title">Sudoku Backtracking Solver</span>
+          <span className="navbar-tag">Academic Tool</span>
         </div>
 
-        {/* Thanh chuyển chế độ xem (View Navigation) */}
-        <nav className="nav-pills-bar flex items-center gap-1 bg-surface-2 p-0.5 rounded-lg border border-subtle">
+        {/* Center/Right: Navigation Tabs */}
+        <nav className="navbar-nav">
           <button
-            className={`nav-tab-btn ${activeView === 'visualizer' ? 'active' : ''}`}
+            className={`nav-tab ${activeView === 'visualizer' ? 'nav-tab-active' : ''}`}
             onClick={() => onChangeView('visualizer')}
           >
             <LayersIcon className="w-3.5 h-3.5" />
             <span>Mô Phỏng</span>
           </button>
           <button
-            className={`nav-tab-btn ${activeView === 'play' ? 'active' : ''}`}
+            className={`nav-tab ${activeView === 'play' ? 'nav-tab-active' : ''}`}
             onClick={() => onChangeView('play')}
           >
             <GamepadIcon className="w-3.5 h-3.5" />
             <span>Tự Giải</span>
           </button>
           <button
-            className={`nav-tab-btn ${activeView === 'benchmark' ? 'active' : ''}`}
+            className={`nav-tab ${activeView === 'benchmark' ? 'nav-tab-active' : ''}`}
             onClick={() => onChangeView('benchmark')}
           >
             <BarChartIcon className="w-3.5 h-3.5" />
@@ -61,31 +52,31 @@ export function Navbar({
           </button>
         </nav>
 
-        {/* Nút hành động */}
-        <div className="flex items-center gap-1.5">
+        {/* Right: Quick Actions */}
+        <div className="navbar-actions">
           <button
-            className="btn-header-action"
+            className="action-btn"
             onClick={onOpenProblemSpec}
-            title="Xem mô tả bài toán và đề bài gốc"
+            title="Xem Mô tả bài toán, Input, Output & Ví dụ gốc"
           >
             <BookOpenIcon className="w-3.5 h-3.5 text-accent" />
-            <span className="hidden md:inline">Đề Bài & Input</span>
+            <span className="hidden sm:inline">Đề Bài & Output</span>
           </button>
 
           <button
-            className="btn-header-action btn-header-purple"
+            className="action-btn action-btn-purple"
             onClick={onOpenReport}
-            title="Xem báo cáo chi tiết về kỹ thuật Backtracking"
+            title="Xem Báo cáo nghiên cứu thuật toán"
           >
             <SparklesIcon className="w-3.5 h-3.5 text-purple" />
-            <span className="hidden md:inline">Báo Cáo Lý Thuyết</span>
+            <span className="hidden sm:inline">Báo Cáo Lý Thuyết</span>
           </button>
 
           <button
-            className="btn-icon p-1.5 rounded-md text-secondary hover:text-primary transition-colors"
+            className="action-icon-btn"
             onClick={onToggleTheme}
-            aria-label="Đổi chế độ sáng tối"
-            title={isDarkMode ? 'Chuyển sang chế độ Sáng' : 'Chuyển sang chế độ Tối'}
+            aria-label="Đổi giao diện sáng/tối"
+            title={isDarkMode ? 'Giao diện Sáng' : 'Giao diện Tối'}
           >
             {isDarkMode ? <SunIcon className="w-4 h-4 text-warning" /> : <MoonIcon className="w-4 h-4" />}
           </button>
