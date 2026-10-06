@@ -48,11 +48,29 @@ export function ControlToolbar({
           <span className="control-sub-badge font-mono">
             {totalSteps > 0 ? `Bước ${currentStepIndex + 1} / ${totalSteps}` : 'Mô phỏng đệ quy'}
           </span>
+
+          <span className="sr-divider-inline" />
+
+          {/* Lựa chọn cách giải đưa lên phía bên phải "Mô phỏng đệ quy" */}
+          <div className="sr-param-group">
+            <span className="sr-param-label">Cách Giải:</span>
+            <select
+              className="sr-select sr-select-header"
+              value={strategy}
+              onChange={e => onChangeStrategy(e.target.value)}
+              disabled={isPlaying}
+              title="Chọn chiến lược duyệt biến: Tuần tự hoặc MRV Heuristic"
+            >
+              <option value="sequential">Quay lui tuần tự</option>
+              <option value="mrv">Quay lui + MRV (Rất nhanh)</option>
+            </select>
+          </div>
         </div>
+
         {renderStatusBadge()}
       </div>
 
-      {/* 1. DUY NHẤT 1 HÀNG CHỨA TẤT CẢ CÁC NÚT ĐIỀU KHIỂN & THÔNG SỐ */}
+      {/* 1. DUY NHẤT 1 HÀNG CHỨA TẤT CẢ CÁC NÚT ĐIỀU KHIỂN & TỐC ĐỘ */}
       <div className="control-actions-single-line">
         {/* Play / Pause button */}
         <button
@@ -115,23 +133,6 @@ export function ControlToolbar({
           <ZapIcon size={13} />
           <span>Giải Tức Thì</span>
         </button>
-
-        <span className="sr-divider" />
-
-        {/* Lựa chọn cách giải: Tuần tự vs MRV Heuristic */}
-        <div className="sr-param-group">
-          <span className="sr-param-label">Cách Giải:</span>
-          <select
-            className="sr-select"
-            value={strategy}
-            onChange={e => onChangeStrategy(e.target.value)}
-            disabled={isPlaying}
-            title="Chọn chiến lược duyệt biến: Tuần tự (chuẩn đề) hoặc MRV Heuristic (nhanh vượt trội)"
-          >
-            <option value="sequential">Quay lui tuần tự</option>
-            <option value="mrv">Quay lui + MRV (Rất nhanh)</option>
-          </select>
-        </div>
 
         <span className="sr-divider" />
 
