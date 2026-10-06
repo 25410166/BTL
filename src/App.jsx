@@ -21,6 +21,18 @@ import {
   generateMRVTrace,
   solveBacktrackingMRVInstant,
 } from './algorithms/sudokuMRV.js';
+import {
+  generateDLXTrace,
+  solveDLXInstant,
+} from './algorithms/sudokuDLX.js';
+import {
+  generateBitwiseTrace,
+  solveBitwiseInstant,
+} from './algorithms/sudokuBitwise.js';
+import {
+  generateCSPTrace,
+  solveCSPInstant,
+} from './algorithms/sudokuCSP.js';
 import { fireConfetti } from './utils/confetti.js';
 
 export default function App() {
@@ -77,10 +89,18 @@ export default function App() {
       return [];
     }
 
-    const traceResult =
-      strategy === 'mrv'
-        ? generateMRVTrace(initialBoard)
-        : generateBacktrackingTrace(initialBoard);
+    let traceResult;
+    if (strategy === 'dlx') {
+      traceResult = generateDLXTrace(initialBoard);
+    } else if (strategy === 'bitwise') {
+      traceResult = generateBitwiseTrace(initialBoard);
+    } else if (strategy === 'csp') {
+      traceResult = generateCSPTrace(initialBoard);
+    } else if (strategy === 'mrv') {
+      traceResult = generateMRVTrace(initialBoard);
+    } else {
+      traceResult = generateBacktrackingTrace(initialBoard);
+    }
 
     setSteps(traceResult.steps);
     setSolvedBoard(traceResult.finalBoard);
@@ -187,10 +207,18 @@ export default function App() {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
 
-    const result =
-      strategy === 'mrv'
-        ? solveBacktrackingMRVInstant(initialBoard)
-        : solveBacktrackingInstant(initialBoard);
+    let result;
+    if (strategy === 'dlx') {
+      result = solveDLXInstant(initialBoard);
+    } else if (strategy === 'bitwise') {
+      result = solveBitwiseInstant(initialBoard);
+    } else if (strategy === 'csp') {
+      result = solveCSPInstant(initialBoard);
+    } else if (strategy === 'mrv') {
+      result = solveBacktrackingMRVInstant(initialBoard);
+    } else {
+      result = solveBacktrackingInstant(initialBoard);
+    }
 
     if (result.solved && result.board) {
       setDisplayBoard(result.board);

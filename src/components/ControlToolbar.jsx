@@ -59,10 +59,13 @@ export function ControlToolbar({
               value={strategy}
               onChange={e => onChangeStrategy(e.target.value)}
               disabled={isPlaying}
-              title="Chọn chiến lược duyệt biến: Tuần tự hoặc MRV Heuristic"
+              title="Chọn thuật toán / chiến lược giải Sudoku"
             >
               <option value="sequential">Quay lui tuần tự</option>
-              <option value="mrv">Quay lui + MRV (Rất nhanh)</option>
+              <option value="mrv">Quay lui + MRV</option>
+              <option value="dlx">Dancing Links (DLX - Nhanh nhất)</option>
+              <option value="bitwise">Bitwise Backtracking (CPU)</option>
+              <option value="csp">CSP + Lan truyền AC-3</option>
             </select>
           </div>
         </div>
