@@ -2,43 +2,43 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Navbar } from './components/Navbar';
 import { SudokuBoard } from './components/SudokuBoard';
 import { ControlToolbar } from './components/ControlToolbar';
+import { TestcaseQuickBar } from './components/TestcaseQuickBar';
+import { StepExecutionTrace } from './components/StepExecutionTrace';
 import { InputSection } from './components/InputSection';
 import { OutputSection } from './components/OutputSection';
-import { StepExecutionTrace } from './components/StepExecutionTrace';
 import { BenchmarkSection } from './components/BenchmarkSection';
 import { PlayPracticeMode } from './components/PlayPracticeMode';
 import { ProblemSpecModal } from './components/ProblemSpecModal';
 import { TheoryReportModal } from './components/TheoryReportModal';
-import { PRESET_TESTCASES } from './data/presetTestcases';
+import { PRESET_TESTCASES } from './data/presetTestcases.js';
 import {
   cloneBoard,
   getEmptyCells,
   validateInitialBoard,
-} from './algorithms/sudokuUtils';
+  generateRandomSudoku,
+} from './algorithms/sudokuUtils.js';
 import {
   generateBacktrackingTrace,
   solveBacktrackingInstant,
-} from './algorithms/sudokuBacktracking';
+} from './algorithms/sudokuBacktracking.js';
 import {
   generateMRVTrace,
   solveBacktrackingMRVInstant,
-} from './algorithms/sudokuMRV';
-import { fireConfetti } from './utils/confetti';
-import { SparklesIcon, BookOpenIcon, CheckCircleIcon } from './components/Icons';
+} from './algorithms/sudokuMRV.js';
+import { fireConfetti } from './utils/confetti.js';
+import { CheckCircleIcon, SparklesIcon, LayersIcon } from './components/Icons.jsx';
 
 export default function App() {
-  // Theme state
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [activeView, setActiveView] = useState('visualizer'); // 'visualizer' | 'play' | 'benchmark'
 
-  // View state: 'visualizer' | 'play' | 'benchmark'
-  const [activeView, setActiveView] = useState('visualizer');
-
-  // Modals state
+  // Modals
   const [isProblemSpecOpen, setIsProblemSpecOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
-  // Sudoku Board state
-  const initialPreset = PRESET_TESTCASES[0]; // Sample đề thi
+  // Sudoku Board State
+  const initialPreset = PRESET_TESTCASES[0];
+  const [selectedPresetId, setSelectedPresetId] = useState(initialPreset.id);
   const [initialBoard, setInitialBoard] = useState(() => cloneBoard(initialPreset.board));
   const [boardTitle, setBoardTitle] = useState(initialPreset.name);
   const [displayBoard, setDisplayBoard] = useState(() => cloneBoard(initialPreset.board));
@@ -51,7 +51,7 @@ export default function App() {
     return s;
   }, [initialEmptyCoords]);
 
-  // Visualizer execution state
+  // Visualizer Execution State
   const [strategy, setStrategy] = useState('sequential'); // 'sequential' | 'mrv'
   const [speedMs, setSpeedMs] = useState(50);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -63,7 +63,7 @@ export default function App() {
 
   const timerRef = useRef(null);
 
-  // Áp dụng theme class vào thẻ html root
+  // Dark/Light mode class
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -74,7 +74,7 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Chuẩn bị các bước (Trace Steps) khi cần
+  // Đảm bảo trace steps sẵn sàng
   function ensureStepsReady() {
     if (steps.length > 0) return steps;
 
@@ -95,15 +95,13 @@ export default function App() {
     return traceResult.steps;
   }
 
-  // Khởi động hoặc tạm dừng chạy tự động
+  // Play / Pause loop
   function handleTogglePlay() {
     if (isPlaying) {
-      // Đang chạy -> Tạm dừng
       setIsPlaying(false);
       setStatus('PAUSED');
       if (timerRef.current) clearInterval(timerRef.current);
     } else {
-      // Đang dừng -> Bắt đầu chạy
       const traceSteps = ensureStepsReady();
       if (!traceSteps || traceSteps.length === 0) return;
 
@@ -112,7 +110,7 @@ export default function App() {
     }
   }
 
-  // Effect chạy vòng lặp hoạt ảnh theo speedMs
+  // Timer animation loop
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -120,7 +118,6 @@ export default function App() {
       setCurrentStepIndex(prevIdx => {
         const nextIdx = prevIdx + 1;
         if (nextIdx >= steps.length) {
-          // Đã chạy tới bước cuối cùng
           clearInterval(timerRef.current);
           setIsPlaying(false);
           const lastStep = steps[steps.length - 1];
@@ -134,7 +131,6 @@ export default function App() {
           return prevIdx;
         }
 
-        // Cập nhật bàn cờ hiển thị theo bước hiện thời
         setDisplayBoard(steps[nextIdx].board);
         return nextIdx;
       });
@@ -145,7 +141,7 @@ export default function App() {
     };
   }, [isPlaying, speedMs, steps]);
 
-  // Tiến 1 bước (Step Forward)
+  // Tiến 1 bước
   function handleStepForward() {
     const traceSteps = ensureStepsReady();
     if (!traceSteps || traceSteps.length === 0) return;
@@ -166,7 +162,7 @@ export default function App() {
     }
   }
 
-  // Lùi 1 bước (Step Backward)
+  // Lùi 1 bước
   function handleStepBackward() {
     if (currentStepIndex > 0) {
       const prevIdx = currentStepIndex - 1;
@@ -176,7 +172,7 @@ export default function App() {
     }
   }
 
-  // Tua trực tiếp đến 1 bước cụ thể
+  // Tua bước
   function handleSeekStep(targetIdx) {
     if (steps.length === 0) return;
     const clampedIdx = Math.max(0, Math.min(targetIdx, steps.length - 1));
@@ -184,7 +180,7 @@ export default function App() {
     setDisplayBoard(steps[clampedIdx].board);
   }
 
-  // Đặt lại bàn cờ về ban đầu
+  // Đặt lại
   function handleReset() {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
@@ -193,7 +189,7 @@ export default function App() {
     setDisplayBoard(cloneBoard(initialBoard));
   }
 
-  // Giải tức thì (Instant Solve)
+  // Giải tức thì
   function handleInstantSolve() {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
@@ -215,8 +211,8 @@ export default function App() {
     }
   }
 
-  // Nạp dữ liệu bàn cờ mới từ InputSection
-  function handleApplyBoard(newBoard, title = 'Bàn cờ tùy chỉnh') {
+  // Chọn testcase từ QuickBar hoặc InputSection
+  function handleSelectTestcase(testcase) {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
     setStatus('IDLE');
@@ -225,12 +221,45 @@ export default function App() {
     setSolvedBoard(null);
     setExecutionStats(null);
 
+    setSelectedPresetId(testcase.id);
+    setInitialBoard(cloneBoard(testcase.board));
+    setDisplayBoard(cloneBoard(testcase.board));
+    setBoardTitle(testcase.name);
+  }
+
+  // Sinh đề ngẫu nhiên
+  function handleRandomGenerate() {
+    const { board } = generateRandomSudoku(5); // chuẩn 5 ô X
+    if (timerRef.current) clearInterval(timerRef.current);
+    setIsPlaying(false);
+    setStatus('IDLE');
+    setSteps([]);
+    setCurrentStepIndex(0);
+    setSolvedBoard(null);
+    setExecutionStats(null);
+
+    setSelectedPresetId('custom_random');
+    setInitialBoard(cloneBoard(board));
+    setDisplayBoard(cloneBoard(board));
+    setBoardTitle('Sinh Ngẫu Nhiên (5 ô X)');
+  }
+
+  // Nạp ma trận tự do từ InputSection
+  function handleApplyCustomBoard(newBoard, title) {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setIsPlaying(false);
+    setStatus('IDLE');
+    setSteps([]);
+    setCurrentStepIndex(0);
+    setSolvedBoard(null);
+    setExecutionStats(null);
+
+    setSelectedPresetId('custom');
     setInitialBoard(cloneBoard(newBoard));
     setDisplayBoard(cloneBoard(newBoard));
     setBoardTitle(title);
   }
 
-  // Chuyển đổi chiến lược Backtracking
   function handleChangeStrategy(newStrat) {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
@@ -241,19 +270,11 @@ export default function App() {
     setDisplayBoard(cloneBoard(initialBoard));
   }
 
-  // Nạp Sample đề bài từ modal
-  function handleLoadExamSample() {
-    const sample = PRESET_TESTCASES.find(t => t.id === 'sample_exam');
-    if (sample) {
-      handleApplyBoard(sample.board, sample.name);
-    }
-  }
-
   const currentStep = steps[currentStepIndex] || null;
 
   return (
-    <div className="app-layout min-h-screen bg-surface-1 text-primary flex flex-col font-sans transition-colors duration-200">
-      {/* 1. Thanh điều hướng đầu trang */}
+    <div className="app-shell flex flex-col min-h-screen">
+      {/* 1. Header gọn gàng */}
       <Navbar
         activeView={activeView}
         onChangeView={setActiveView}
@@ -263,105 +284,87 @@ export default function App() {
         onToggleTheme={() => setIsDarkMode(prev => !prev)}
       />
 
-      {/* 2. Banner thông tin đề tài nổi bật */}
-      <section className="bg-surface-2 border-b border-subtle py-2.5 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="badge badge-accent">Đang xét:</span>
-            <span className="font-semibold text-primary">{boardTitle}</span>
-            <span className="text-secondary">
-              ({initialEmptyCoords.length} ô trống mang ký tự 'X' cần tìm số)
-            </span>
-            {initialEmptyCoords.length <= 5 ? (
-              <span className="badge badge-emerald text-[10px] hidden sm:inline-flex items-center gap-1">
-                <CheckCircleIcon className="w-3 h-3" /> Chuẩn Đề Thi (≤ 5 ô X)
-              </span>
-            ) : (
-              <span className="badge badge-purple text-[10px] hidden sm:inline-flex items-center gap-1">
-                <SparklesIcon className="w-3 h-3" /> Mở Rộng Thử Thách
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 text-secondary text-[11px]">
-            <span>
-              Thuật toán: <strong className="text-accent">100% Backtracking (Quay lui)</strong>
-            </span>
-            <button
-              className="text-accent underline font-medium hover:text-primary transition-colors"
-              onClick={() => setIsProblemSpecOpen(true)}
-            >
-              Xem đề bài gốc & ví dụ
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Thân trang ứng dụng */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* VIEW 1: TRỰC QUAN HÓA THUẬT TOÁN (CHẾ ĐỘ MẶC ĐỊNH) */}
+      {/* 2. Thân chính ứng dụng */}
+      <main className="main-content flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 space-y-4">
         {activeView === 'visualizer' && (
-          <div className="space-y-6">
-            {/* Thanh công cụ điều khiển mô phỏng */}
-            <ControlToolbar
-              isPlaying={isPlaying}
-              onTogglePlay={handleTogglePlay}
-              onStepForward={handleStepForward}
-              onStepBackward={handleStepBackward}
-              onReset={handleReset}
-              onInstantSolve={handleInstantSolve}
-              speedMs={speedMs}
-              onChangeSpeed={setSpeedMs}
-              currentStepIndex={currentStepIndex}
-              totalSteps={steps.length}
-              onSeekStep={handleSeekStep}
-              strategy={strategy}
-              onChangeStrategy={handleChangeStrategy}
-              status={status}
-            />
-
-            {/* Bố cục 2 cột chính: Bên trái Bàn cờ, Bên phải Trình theo dõi chi tiết */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* Cột trái (7/12): Bàn cờ Sudoku 9x9 */}
-              <div className="lg:col-span-7 flex flex-col items-center board-main-wrapper p-4 sm:p-6 rounded-2xl bg-surface-card border border-subtle shadow-card">
-                <SudokuBoard
-                  board={displayBoard}
-                  initialEmptySet={initialEmptySet}
-                  currentStep={currentStep}
-                  userSolvedState={status === 'SOLVED'}
-                />
-
-                {/* Chú thích màu sắc trực quan (Legend) */}
-                <div className="mt-5 w-full pt-4 border-t border-subtle grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[11px] text-secondary">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded bg-surface-2 border border-subtle inline-block" />
-                    <span>Số cho sẵn đề bài</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded bg-amber-500/20 border border-amber-500 inline-block" />
-                    <span>Ô trống 'X' ban đầu</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded bg-sky-500/20 border border-sky-400 inline-block animate-pulse" />
-                    <span>Ô đang thử giá trị</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded bg-rose-500/20 border border-rose-500 inline-block" />
-                    <span>Xung đột hàng/cột/khối</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded bg-orange-500/20 border border-orange-500 inline-block" />
-                    <span>Quay lui (Backtrack)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 rounded bg-emerald-500/20 border border-emerald-400 inline-block" />
-                    <span>Số đã giải thành công</span>
-                  </div>
-                </div>
+          <div className="space-y-4">
+            {/* Context Bar gọn nhẹ */}
+            <div className="context-bar">
+              <div className="flex items-center gap-2">
+                <span className="context-label">Đang nạp:</span>
+                <strong className="text-primary text-xs">{boardTitle}</strong>
+                <span className="badge-mini-x">{initialEmptyCoords.length} ô 'X'</span>
+                {initialEmptyCoords.length <= 5 ? (
+                  <span className="badge-mini-exam">Chuẩn Đề (≤ 5 ô X)</span>
+                ) : (
+                  <span className="badge-mini-expand">Mở Rộng</span>
+                )}
               </div>
 
-              {/* Cột phải (5/12): Theo dõi vết đệ quy & Call Stack */}
-              <div className="lg:col-span-5 space-y-6">
+              <div className="flex items-center gap-3 text-[11px] text-secondary">
+                <span>Thuật toán: <strong className="text-accent">100% Backtracking</strong></span>
+                <button
+                  className="text-accent hover:underline cursor-pointer"
+                  onClick={() => setIsProblemSpecOpen(true)}
+                >
+                  Xem Đề Bài Gốc
+                </button>
+              </div>
+            </div>
+
+            {/* BỐ CỤC STUDIO 2 CỘT: Cột Trái Bàn Cờ, Cột Phải Bộ Theo Dõi */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+              {/* CỘT TRÁI (7/12): Bàn cờ + Thanh testcase + Điều khiển */}
+              <div className="lg:col-span-7 flex flex-col space-y-3">
+                {/* 1. Thanh chọn testcase 1-click trực tiếp trên bàn cờ */}
+                <TestcaseQuickBar
+                  selectedId={selectedPresetId}
+                  onSelectTestcase={handleSelectTestcase}
+                  onRandomGenerate={handleRandomGenerate}
+                  disabled={isPlaying}
+                />
+
+                {/* 2. Bàn cờ Sudoku 9x9 */}
+                <div className="board-center-deck">
+                  <SudokuBoard
+                    board={displayBoard}
+                    initialEmptySet={initialEmptySet}
+                    currentStep={currentStep}
+                    userSolvedState={status === 'SOLVED'}
+                  />
+
+                  {/* Chú giải màu sắc nhỏ gọn */}
+                  <div className="board-mini-legend">
+                    <span className="legend-item"><span className="legend-box box-given" /> Cho sẵn</span>
+                    <span className="legend-item"><span className="legend-box box-x" /> Ô 'X'</span>
+                    <span className="legend-item"><span className="legend-box box-active" /> Đang xét</span>
+                    <span className="legend-item"><span className="legend-box box-conflict" /> Xung đột</span>
+                    <span className="legend-item"><span className="legend-box box-backtrack" /> Quay lui</span>
+                    <span className="legend-item"><span className="legend-box box-solved" /> Đã giải</span>
+                  </div>
+                </div>
+
+                {/* 3. Thanh điều khiển mô phỏng */}
+                <ControlToolbar
+                  isPlaying={isPlaying}
+                  onTogglePlay={handleTogglePlay}
+                  onStepForward={handleStepForward}
+                  onStepBackward={handleStepBackward}
+                  onReset={handleReset}
+                  onInstantSolve={handleInstantSolve}
+                  speedMs={speedMs}
+                  onChangeSpeed={setSpeedMs}
+                  currentStepIndex={currentStepIndex}
+                  totalSteps={steps.length}
+                  onSeekStep={handleSeekStep}
+                  strategy={strategy}
+                  onChangeStrategy={handleChangeStrategy}
+                  status={status}
+                />
+              </div>
+
+              {/* CỘT PHẢI (5/12): Bộ theo dõi chuyển ô & Dòng/cột + Quick Output */}
+              <div className="lg:col-span-5 flex flex-col space-y-3">
                 <StepExecutionTrace
                   currentStep={currentStep}
                   currentStepIndex={currentStepIndex}
@@ -369,65 +372,51 @@ export default function App() {
                   allSteps={steps}
                   onSelectStep={handleSeekStep}
                 />
+
+                {/* Quick Output Preview */}
+                <OutputSection
+                  solvedBoard={solvedBoard || (status === 'SOLVED' ? displayBoard : null)}
+                  initialEmptyCoords={initialEmptyCoords}
+                  stats={executionStats}
+                  isSolved={status === 'SOLVED'}
+                  isUnsolvable={status === 'NO_SOLUTION'}
+                  status={status}
+                />
               </div>
             </div>
 
-            {/* Bố cục 2 cột phụ: Input đầu vào & Output đầu ra */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Mục Nhập dữ liệu nâng cao (Nhập text ma trận, file .txt) */}
+            <div className="pt-2">
               <InputSection
                 currentBoard={initialBoard}
-                onApplyBoard={handleApplyBoard}
+                onApplyBoard={handleApplyCustomBoard}
                 disabled={isPlaying}
-              />
-              <OutputSection
-                solvedBoard={solvedBoard || (status === 'SOLVED' ? displayBoard : null)}
-                initialEmptyCoords={initialEmptyCoords}
-                stats={executionStats}
-                isSolved={status === 'SOLVED'}
-                isUnsolvable={status === 'NO_SOLUTION'}
-                status={status}
               />
             </div>
           </div>
         )}
 
-        {/* VIEW 2: TỰ GIẢI & LUYỆN TẬP (PLAY MODE) */}
+        {/* Chế độ Play & Practice */}
         {activeView === 'play' && (
-          <div className="space-y-6">
-            <PlayPracticeMode
-              initialBoard={initialBoard}
-              initialEmptySet={initialEmptySet}
-            />
-          </div>
+          <PlayPracticeMode
+            initialBoard={initialBoard}
+            initialEmptySet={initialEmptySet}
+          />
         )}
 
-        {/* VIEW 3: ĐỐI SÁNH THUẬT TOÁN (BENCHMARK) */}
+        {/* Chế độ Đối sánh thuật toán */}
         {activeView === 'benchmark' && (
-          <div className="space-y-6">
-            <BenchmarkSection />
-          </div>
+          <BenchmarkSection />
         )}
       </main>
 
-      {/* 4. Footer */}
-      <footer className="bg-surface-2 border-t border-subtle py-4 px-4 sm:px-6 text-center text-xs text-secondary mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p>
-            Bài Tập Lớn: <strong>Giải Sudoku 9×9 Bằng Kỹ Thuật Quay Lui (Backtracking)</strong> — Triển khai React + Vite
-          </p>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsReportOpen(true)}
-              className="text-accent hover:underline"
-            >
-              Báo Cáo Lý Thuyết
-            </button>
-            <button
-              onClick={() => setIsProblemSpecOpen(true)}
-              className="text-accent hover:underline"
-            >
-              Mô Tả Bài Toán
-            </button>
+      {/* Footer */}
+      <footer className="footer-compact">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-[11px] text-secondary">
+          <span>BTL Thiết Kế Thuật Toán: <strong>Sudoku 9×9 Backtracking Solver</strong></span>
+          <div className="flex gap-4">
+            <button onClick={() => setIsReportOpen(true)} className="hover:text-accent">Báo Cáo Lý Thuyết</button>
+            <button onClick={() => setIsProblemSpecOpen(true)} className="hover:text-accent">Đề Bài & Output</button>
           </div>
         </div>
       </footer>
@@ -436,7 +425,7 @@ export default function App() {
       <ProblemSpecModal
         isOpen={isProblemSpecOpen}
         onClose={() => setIsProblemSpecOpen(false)}
-        onLoadSample={handleLoadExamSample}
+        onLoadSample={() => handleSelectTestcase(PRESET_TESTCASES[0])}
       />
       <TheoryReportModal
         isOpen={isReportOpen}

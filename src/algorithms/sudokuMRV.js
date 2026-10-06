@@ -110,6 +110,8 @@ export function generateMRVTrace(initialBoard, maxSteps = 15000) {
 
   const callStack = [];
 
+  let lastVisitedCell = null;
+
   function recordStep(type, payload = {}) {
     if (steps.length >= maxSteps) return;
 
@@ -118,6 +120,7 @@ export function generateMRVTrace(initialBoard, maxSteps = 15000) {
       type,
       board: cloneBoard(board),
       callStack: [...callStack],
+      prevCell: lastVisitedCell ? { ...lastVisitedCell } : null,
       stats: { ...stats },
       ...payload,
     });
@@ -125,6 +128,7 @@ export function generateMRVTrace(initialBoard, maxSteps = 15000) {
 
   recordStep('START', {
     message: 'Bắt đầu Backtracking với Heuristic MRV (Chọn ô có ít ứng viên nhất để duyệt trước)...',
+    transitionNote: 'Bắt đầu MRV',
   });
 
   function solve(depth = 0) {
@@ -136,30 +140,42 @@ export function generateMRVTrace(initialBoard, maxSteps = 15000) {
     if (!cell) {
       recordStep('SUCCESS', {
         message: 'Hoàn tất! Thuật toán Backtracking MRV đã điền xong toàn bộ Sudoku.',
+        transitionNote: 'Hoàn tất',
       });
       return true;
     }
 
     const { row: r, col: c } = cell;
+    const boxIdx = Math.floor(r / 3) * 3 + Math.floor(c / 3) + 1;
 
     if (candidates.length === 0) {
       recordStep('DEAD_END', {
         row: r,
         col: c,
         depth,
+        boxIdx,
+        transitionNote: `Ô (${r + 1}, ${c + 1}): 0 ứng viên ➔ Lùi đệ quy`,
         message: `Ô (${r + 1}, ${c + 1}) không còn số nào hợp lệ (0 ứng viên). Lập tức quay lui (Early Pruning).`,
       });
       return false;
     }
 
+    const fromCell = lastVisitedCell;
+    const transitionText = fromCell
+      ? `Chuyển từ ô (${fromCell.row + 1}, ${fromCell.col + 1}) ➔ Đến ô (${r + 1}, ${c + 1})`
+      : `Bắt đầu tại ô (${r + 1}, ${c + 1})`;
+
     recordStep('SELECT_CELL', {
       row: r,
       col: c,
       depth,
+      boxIdx,
       candidates,
-      message: `MRV chọn ô (${r + 1}, ${c + 1}) vì chỉ có ${candidates.length} ứng viên khả dĩ: [${candidates.join(', ')}].`,
+      transitionNote: transitionText,
+      message: `MRV chọn ô (${r + 1}, ${c + 1}) (Hàng ${r + 1}, Cột ${c + 1}, Khối #${boxIdx}) vì chỉ có ${candidates.length} ứng viên: [${candidates.join(', ')}].`,
     });
 
+    lastVisitedCell = { row: r, col: c, depth };
     callStack.push({ row: r, col: c, depth, tried: [] });
 
     for (const num of candidates) {
@@ -176,8 +192,12 @@ export function generateMRVTrace(initialBoard, maxSteps = 15000) {
         col: c,
         num,
         depth,
+        boxIdx,
+        transitionNote: `Gán (${r + 1}, ${c + 1}) = ${num} ➔ Tiến đệ quy`,
         message: `Gán số ${num} vào ô (${r + 1}, ${c + 1}). Tiến hành đệ quy...`,
       });
+
+      lastVisitedCell = { row: r, col: c, depth, num };
 
       if (solve(depth + 1)) {
         return true;
@@ -191,8 +211,12 @@ export function generateMRVTrace(initialBoard, maxSteps = 15000) {
         col: c,
         num,
         depth,
+        boxIdx,
+        transitionNote: `↩ QUAY LUI về (${r + 1}, ${c + 1}): Rút số ${num}`,
         message: `Quay lui (Backtrack): Rút số ${num} khỏi ô (${r + 1}, ${c + 1}) để thử ứng viên khác.`,
       });
+
+      lastVisitedCell = { row: r, col: c, depth };
     }
 
     callStack.pop();

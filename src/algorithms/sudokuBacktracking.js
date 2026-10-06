@@ -66,9 +66,9 @@ export function solveBacktrackingInstant(initialBoard) {
 
 /**
  * Bộ tạo vết thực thi từng bước (Step-by-step Trace Generator)
- * Phục vụ trực quan hóa quá trình đệ quy và quay lui
+ * Lưu trữ chi tiết: Ô trước đó -> Ô hiện tại -> Ô tiếp theo, quét hàng nào, cột nào
  * @param {number[][]} initialBoard
- * @param {number} maxSteps Giới hạn an toàn số bước ghi nhận (tránh tràn RAM với bài toán cực lớn)
+ * @param {number} maxSteps Giới hạn an toàn số bước ghi nhận
  * @returns {Array<object>} Danh sách các snapshot trạng thái
  */
 export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
@@ -85,17 +85,18 @@ export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
     executionTimeMs: 0,
   };
 
-  // Stack lưu trữ vết đệ quy để hiển thị Recursion Call Stack
   const callStack = [];
+  let lastVisitedCell = null;
 
   function recordStep(type, payload = {}) {
     if (steps.length >= maxSteps) return;
 
     steps.push({
       stepId: steps.length + 1,
-      type, // 'SELECT_CELL' | 'TRY_NUMBER' | 'CONFLICT' | 'ASSIGN' | 'BACKTRACK' | 'SUCCESS' | 'NO_SOLUTION'
+      type, // 'SCAN' | 'SELECT_CELL' | 'TRY_NUMBER' | 'CONFLICT' | 'ASSIGN' | 'BACKTRACK' | 'SUCCESS' | 'NO_SOLUTION'
       board: cloneBoard(board),
       callStack: [...callStack],
+      prevCell: lastVisitedCell ? { ...lastVisitedCell } : null,
       stats: { ...stats },
       ...payload,
     });
@@ -103,7 +104,8 @@ export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
 
   // Bước 0: Bắt đầu thuật toán
   recordStep('START', {
-    message: 'Bắt đầu thuật toán Quay lui (Backtracking). Tìm ô trống đầu tiên...',
+    message: 'Khởi động thuật toán Quay lui. Bắt đầu quét ma trận tìm ô trống đầu tiên...',
+    transitionNote: 'Bắt đầu tìm kiếm',
   });
 
   function solve(depth = 0) {
@@ -125,25 +127,34 @@ export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
       if (emptyRow !== -1) break;
     }
 
-    // Nếu không còn ô trống nào -> Đã tìm ra lời giải hợp lệ
+    // Nếu không còn ô trống nào -> Đã hoàn tất
     if (emptyRow === -1) {
       recordStep('SUCCESS', {
-        message: 'Hoàn tất! Tất cả các ô trống đã được điền thỏa mãn luật Sudoku 9x9.',
+        message: 'HOÀN TẤT! Tất cả các ô trống đã được điền thỏa mãn 100% luật Sudoku 9x9.',
+        transitionNote: 'Đã giải thành công toàn bộ bàn cờ!',
       });
       return true;
     }
 
     const r = emptyRow;
     const c = emptyCol;
+    const boxIdx = Math.floor(r / 3) * 3 + Math.floor(c / 3) + 1;
+
+    const fromCell = lastVisitedCell;
+    const transitionText = fromCell
+      ? `Chuyển từ ô (${fromCell.row + 1}, ${fromCell.col + 1}) ➔ Đến ô (${r + 1}, ${c + 1})`
+      : `Bắt đầu tại ô (${r + 1}, ${c + 1})`;
 
     recordStep('SELECT_CELL', {
       row: r,
       col: c,
       depth,
-      message: `Đang xét ô trống tại hàng ${r + 1}, cột ${c + 1} (Độ sâu đệ quy: ${depth + 1}).`,
+      boxIdx,
+      transitionNote: transitionText,
+      message: `Đang xét ô trống tại Hàng ${r + 1}, Cột ${c + 1} (Khối 3x3 #${boxIdx}). Chuẩn bị thử các số từ 1 đến 9.`,
     });
 
-    // Đẩy vào call stack
+    lastVisitedCell = { row: r, col: c, depth };
     callStack.push({ row: r, col: c, depth, tried: [] });
 
     // Thử tuần tự từ 1 đến 9
@@ -157,19 +168,20 @@ export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
       const isValid = conflicts.length === 0;
 
       if (!isValid) {
-        // Ghi lại bước xung đột
         recordStep('CONFLICT', {
           row: r,
           col: c,
           num,
           depth,
+          boxIdx,
           conflicts,
-          message: `Thử số ${num} tại (${r + 1}, ${c + 1}) ➔ Xung đột với ${conflicts.map(cf => `${cf.reason === 'row' ? 'Hàng' : cf.reason === 'col' ? 'Cột' : 'Khối 3x3'} tại (${cf.row + 1}, ${cf.col + 1})`).join(', ')}.`,
+          transitionNote: `Ô (${r + 1}, ${c + 1}): Thử số ${num} bị vi phạm`,
+          message: `Thử số ${num} tại (${r + 1}, ${c + 1}) ➔ Xung đột: ${conflicts.map(cf => `${cf.reason === 'row' ? `Hàng ${cf.row + 1}` : cf.reason === 'col' ? `Cột ${cf.col + 1}` : 'Khối 3x3'} đã có số ${num}`).join(', ')}.`,
         });
         continue;
       }
 
-      // Hợp lệ: Gán số vào ô
+      // Hợp lệ: Gán số
       board[r][c] = num;
       stats.assignments++;
 
@@ -178,8 +190,12 @@ export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
         col: c,
         num,
         depth,
-        message: `Hợp lệ! Tạm thời gán số ${num} vào ô (${r + 1}, ${c + 1}). Đệ quy sang ô tiếp theo...`,
+        boxIdx,
+        transitionNote: `Gán (${r + 1}, ${c + 1}) = ${num} ➔ Tiến bước sang ô tiếp theo`,
+        message: `Hợp lệ! Tạm thời gán số ${num} vào ô (${r + 1}, ${c + 1}). Đệ quy tiến sang ô trống tiếp theo (Độ sâu ${depth + 2}).`,
       });
+
+      lastVisitedCell = { row: r, col: c, depth, num };
 
       // Đệ quy bước tiếp theo
       const solvedNext = solve(depth + 1);
@@ -196,17 +212,22 @@ export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
         col: c,
         num,
         depth,
-        message: `Quay lui (Backtrack): Nhánh thử ${num} tại (${r + 1}, ${c + 1}) đi vào ngõ cụt. Hủy gán, quay lại ô (${r + 1}, ${c + 1}) để thử giá trị tiếp theo.`,
+        boxIdx,
+        transitionNote: `↩ QUAY LUI về ô (${r + 1}, ${c + 1}): Rút số ${num}`,
+        message: `Quay lui (Backtrack): Nhánh sau tại ô (${r + 1}, ${c + 1}) bị bế tắc! Rút số ${num} ra khỏi ô (${r + 1}, ${c + 1}) để thử giá trị tiếp theo.`,
       });
+
+      lastVisitedCell = { row: r, col: c, depth };
     }
 
-    // Đã thử hết 1..9 mà không có số nào thỏa mãn
     callStack.pop();
     recordStep('DEAD_END', {
       row: r,
       col: c,
       depth,
-      message: `Đã thử hết 1..9 tại (${r + 1}, ${c + 1}) nhưng không tìm được giá trị hợp lệ. Trả về false và lùi đệ quy.`,
+      boxIdx,
+      transitionNote: `↩ Lùi đệ quy từ ô (${r + 1}, ${c + 1})`,
+      message: `Đã thử hết 1..9 tại (${r + 1}, ${c + 1}) mà không có số nào khả thi. Trả về False để quay lui về ô trước đó.`,
     });
 
     return false;
@@ -218,6 +239,7 @@ export function generateBacktrackingTrace(initialBoard, maxSteps = 15000) {
   if (!solved && steps.length < maxSteps) {
     recordStep('NO_SOLUTION', {
       message: 'Không tìm thấy lời giải hợp lệ cho Sudoku này (Bài toán vô nghiệm).',
+      transitionNote: 'Vô nghiệm',
     });
   }
 

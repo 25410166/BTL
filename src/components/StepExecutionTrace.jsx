@@ -1,7 +1,7 @@
-// Trình theo dõi chi tiết từng bước thực hiện của thuật toán (Execution Step Visualizer)
-// Hiển thị Call Stack đệ quy, Lịch sử thao tác, và Giải thích từng hành động
+// Bộ theo dõi chi tiết từng bước thuật toán chuẩn Pro Developer Dashboard
+// Minh họa rõ ràng: Chọn ô nào, chuyển sang ô nào, quét dòng nào, cột nào
 import React, { useRef, useEffect } from 'react';
-import { LayersIcon, ZapIcon, AlertTriangleIcon, CheckCircleIcon, RotateCcwIcon } from './Icons';
+import { LayersIcon, CheckCircleIcon, AlertTriangleIcon, RotateCcwIcon, ZapIcon } from './Icons.jsx';
 
 export function StepExecutionTrace({
   currentStep,
@@ -12,7 +12,6 @@ export function StepExecutionTrace({
 }) {
   const logContainerRef = useRef(null);
 
-  // Tự động cuộn danh sách log xuống bước hiện tại
   useEffect(() => {
     if (logContainerRef.current) {
       const activeElem = logContainerRef.current.querySelector('.log-row-active');
@@ -25,98 +24,151 @@ export function StepExecutionTrace({
   if (!currentStep && totalSteps === 0) {
     return (
       <div className="trace-panel-card text-center p-6 text-secondary">
-        <LayersIcon className="w-8 h-8 mx-auto mb-2 opacity-60 text-accent" />
-        <p className="text-sm">Trình theo dõi từng bước chưa bắt đầu.</p>
-        <p className="text-xs text-subtle mt-1">Bấm "Chạy Mô Phỏng" hoặc "Từng Bước" để theo dõi đệ quy & quay lui.</p>
+        <p className="text-xs font-semibold text-primary">Sẵn Sàng Mô Phỏng</p>
+        <p className="text-[11px] text-secondary mt-1">
+          Bấm <strong className="text-accent">"Chạy Mô Phỏng"</strong> hoặc <strong className="text-accent">"Tiến 1 Bước"</strong> để xem thuật toán chọn ô, quét dòng/cột và quay lui từng bước.
+        </p>
       </div>
     );
   }
 
-  const { type, message, row, col, num, depth = 0, callStack = [], stats = {} } = currentStep || {};
+  const {
+    type,
+    message,
+    row,
+    col,
+    num,
+    depth = 0,
+    boxIdx,
+    conflicts = [],
+    prevCell = null,
+    callStack = [],
+    transitionNote = '',
+  } = currentStep || {};
 
-  // Badge màu theo loại hành động
   function renderActionBadge(stepType) {
     switch (stepType) {
       case 'ASSIGN':
-        return <span className="badge badge-emerald text-[10px]">GÁN HỢP LỆ</span>;
+        return <span className="badge badge-emerald text-[9px]">GÁN HỢP LỆ</span>;
       case 'CONFLICT':
-        return <span className="badge badge-danger text-[10px]">XUNG ĐỘT</span>;
+        return <span className="badge badge-danger text-[9px]">XUNG ĐỘT</span>;
       case 'BACKTRACK':
-        return <span className="badge badge-warning text-[10px]">QUAY LUI</span>;
+        return <span className="badge badge-warning text-[9px]">↩ QUAY LUI</span>;
       case 'SELECT_CELL':
-        return <span className="badge badge-accent text-[10px]">CHỌN Ô</span>;
+        return <span className="badge badge-accent text-[9px]">CHỌN Ô</span>;
       case 'SUCCESS':
-        return <span className="badge badge-emerald text-[10px]">THÀNH CÔNG</span>;
+        return <span className="badge badge-emerald text-[9px]">HOÀN TẤT</span>;
       case 'DEAD_END':
-        return <span className="badge badge-danger text-[10px]">BẾ TẮC</span>;
+        return <span className="badge badge-danger text-[9px]">BẾ TẮC</span>;
       default:
-        return <span className="badge badge-neutral text-[10px]">BẮT ĐẦU</span>;
+        return <span className="badge badge-neutral text-[9px]">BẮT ĐẦU</span>;
     }
   }
 
   return (
-    <div className="trace-panel-card space-y-4">
-      {/* Header */}
+    <div className="trace-panel-card space-y-3">
+      {/* Header gọn gàng */}
       <div className="flex items-center justify-between border-b border-subtle pb-2">
-        <h4 className="panel-title flex items-center gap-2 text-xs uppercase tracking-wider">
-          <LayersIcon className="w-4 h-4 text-accent" />
-          <span>Theo Dõi Từng Bước Thực Thi (Step-by-Step Tracker)</span>
-        </h4>
-        <span className="text-xs font-mono text-secondary">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-primary uppercase tracking-wider">
+            Theo Dõi Thuật Toán
+          </span>
+          {renderActionBadge(type)}
+        </div>
+        <span className="font-mono text-xs text-accent font-semibold">
           Bước {currentStepIndex + 1} / {totalSteps}
         </span>
       </div>
 
-      {/* Hành động hiện tại (Current Action Spotlight) */}
-      <div className={`current-action-banner action-${type?.toLowerCase() || 'default'}`}>
-        <div className="flex items-start gap-2.5">
-          <div className="mt-0.5">{renderActionBadge(type)}</div>
-          <div className="flex-1">
-            <p className="text-xs font-medium text-primary leading-snug">{message}</p>
-            {row !== undefined && col !== undefined && (
-              <div className="flex items-center gap-3 mt-1 text-[11px] text-secondary font-mono">
-                <span>
-                  Tọa độ: hàng <strong>{row + 1}</strong>, cột <strong>{col + 1}</strong>
-                </span>
-                {num !== undefined && (
-                  <span>
-                    Giá trị thử: <strong className="text-accent">{num}</strong>
-                  </span>
-                )}
-                <span>
-                  Độ sâu đệ quy: <strong className="text-purple">{depth}</strong>
-                </span>
-              </div>
-            )}
+      {/* 1. Sơ đồ chuyển bước trực quan: [Ô TRƯỚC] ➔ [Ô ĐANG XÉT] ➔ [HÀNH ĐỘNG] */}
+      <div className="step-flow-box">
+        <div className="text-[10px] uppercase font-bold text-secondary tracking-wider mb-1.5 flex items-center justify-between">
+          <span>Tiến Trình Chuyển Ô & Dòng/Cột:</span>
+          {transitionNote && <span className="text-accent normal-case font-mono">{transitionNote}</span>}
+        </div>
+
+        <div className="flow-nodes-row">
+          {/* Ô trước đó */}
+          <div className="flow-node flow-node-prev">
+            <span className="flow-node-label">Ô Trước:</span>
+            <span className="flow-node-val">
+              {prevCell ? `(${prevCell.row + 1}, ${prevCell.col + 1})` : 'Khởi đầu'}
+            </span>
+          </div>
+
+          <span className="flow-arrow">➔</span>
+
+          {/* Ô hiện tại */}
+          <div className="flow-node flow-node-curr">
+            <span className="flow-node-label">Đang Xét:</span>
+            <span className="flow-node-val text-accent font-bold">
+              {row !== undefined ? `(${row + 1}, ${col + 1})` : '—'}
+            </span>
+          </div>
+
+          <span className="flow-arrow">➔</span>
+
+          {/* Vị trí quét Hàng / Cột */}
+          <div className="flow-node flow-node-scan">
+            <span className="flow-node-label">Vị Trí Quét:</span>
+            <span className="flow-node-val text-purple font-mono">
+              {row !== undefined ? `Hàng ${row + 1} | Cột ${col + 1}` : '—'}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Ngăn xếp đệ quy trực quan (Recursion Call Stack) */}
+      {/* 2. Chi tiết hành động tại bước này */}
+      <div className={`action-detail-card action-${type?.toLowerCase() || 'default'}`}>
+        <p className="text-xs font-medium text-primary leading-snug">{message}</p>
+
+        {/* Bảng phân tích kiểm tra ràng buộc 3 tầng nếu đang thử số */}
+        {num !== undefined && (
+          <div className="mt-2 pt-2 border-t border-subtle grid grid-cols-3 gap-1.5 text-[10px]">
+            {/* Kiểm tra Hàng */}
+            <div className={`check-chip ${conflicts.some(c => c.reason === 'row') ? 'chip-conflict' : 'chip-ok'}`}>
+              <span>Hàng {row + 1}:</span>
+              <strong>{conflicts.some(c => c.reason === 'row') ? 'Trùng số' : '✓ Hợp lệ'}</strong>
+            </div>
+
+            {/* Kiểm tra Cột */}
+            <div className={`check-chip ${conflicts.some(c => c.reason === 'col') ? 'chip-conflict' : 'chip-ok'}`}>
+              <span>Cột {col + 1}:</span>
+              <strong>{conflicts.some(c => c.reason === 'col') ? 'Trùng số' : '✓ Hợp lệ'}</strong>
+            </div>
+
+            {/* Kiểm tra Khối 3x3 */}
+            <div className={`check-chip ${conflicts.some(c => c.reason === 'box') ? 'chip-conflict' : 'chip-ok'}`}>
+              <span>Khối #{boxIdx || 1}:</span>
+              <strong>{conflicts.some(c => c.reason === 'box') ? 'Trùng số' : '✓ Hợp lệ'}</strong>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 3. Ngăn xếp đệ quy (Call Stack) gọn gàng */}
       <div>
-        <h5 className="text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1.5 flex items-center justify-between">
-          <span>Ngăn Xếp Đệ Quy (Call Stack - Độ sâu: {callStack.length})</span>
-          <span className="text-[10px] text-subtle">Khung đệ quy hiện thời</span>
-        </h5>
+        <div className="flex items-center justify-between text-[11px] font-semibold text-secondary mb-1">
+          <span>Ngăn Xếp Đệ Quy (Call Stack): Độ sâu {callStack.length}</span>
+          <span className="text-[10px] text-subtle">Mỗi ô trống tương ứng 1 tầng đệ quy</span>
+        </div>
         {callStack.length === 0 ? (
-          <div className="p-2 rounded bg-surface-2 text-center text-[11px] text-subtle">
-            Call Stack rỗng (chưa có hàm đệ quy nào trên stack)
+          <div className="p-1.5 rounded bg-surface-2 text-center text-[10px] text-subtle">
+            Call Stack rỗng
           </div>
         ) : (
-          <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-surface-2 border border-subtle max-h-24 overflow-y-auto">
+          <div className="callstack-chips-row">
             {callStack.map((frame, idx) => (
               <div
                 key={idx}
-                className={`stack-frame-chip ${idx === callStack.length - 1 ? 'frame-active' : ''}`}
-                title={`Độ sâu ${frame.depth}: Ô (${frame.row + 1}, ${frame.col + 1}), đã thử các số [${frame.tried.join(', ')}]`}
+                className={`stack-chip ${idx === callStack.length - 1 ? 'chip-top' : ''}`}
+                title={`Tầng ${frame.depth + 1}: Ô (${frame.row + 1}, ${frame.col + 1}), đã thử [${frame.tried.join(', ')}]`}
               >
-                <span className="font-mono text-[10px]">Tầng {frame.depth + 1}:</span>
-                <span className="font-bold text-[11px]">
-                  ({frame.row + 1},{frame.col + 1})
-                </span>
+                <span className="text-[9px] opacity-75">T{frame.depth + 1}:</span>
+                <span className="font-mono font-bold">({frame.row + 1},{frame.col + 1})</span>
                 {frame.tried.length > 0 && (
-                  <span className="text-[9px] text-secondary">
-                    [{frame.tried[frame.tried.length - 1]}]
+                  <span className="stack-tried-num font-mono">
+                    ={frame.tried[frame.tried.length - 1]}
                   </span>
                 )}
               </div>
@@ -125,28 +177,24 @@ export function StepExecutionTrace({
         )}
       </div>
 
-      {/* Lịch sử tất cả các bước (Audit Log Table) */}
+      {/* 4. Nhật ký thực thi các bước (Audit Log) */}
       <div>
-        <h5 className="text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1.5 flex items-center justify-between">
-          <span>Nhật Ký Thực Thi (Log Các Bước)</span>
-          <span className="text-[10px] text-subtle">Bấm vào dòng để xem lại trạng thái bàn cờ</span>
-        </h5>
-        <div className="log-table-container max-h-48 overflow-y-auto" ref={logContainerRef}>
+        <div className="flex items-center justify-between text-[11px] font-semibold text-secondary mb-1">
+          <span>Nhật Ký Các Bước (Bấm để nhảy đến):</span>
+          <span className="text-[10px] text-subtle">{allSteps.length} sự kiện</span>
+        </div>
+        <div className="log-table-compact" ref={logContainerRef}>
           {allSteps.map((step, idx) => {
             const isCurrent = idx === currentStepIndex;
             return (
               <div
                 key={step.stepId || idx}
-                className={`log-row ${isCurrent ? 'log-row-active' : ''}`}
+                className={`log-item ${isCurrent ? 'log-item-active' : ''}`}
                 onClick={() => onSelectStep && onSelectStep(idx)}
               >
-                <span className="log-step-id font-mono text-[10px] text-subtle w-8">
-                  #{idx + 1}
-                </span>
-                <span className="log-badge flex-shrink-0">{renderActionBadge(step.type)}</span>
-                <span className="log-desc text-xs text-secondary truncate flex-1 pl-2">
-                  {step.message}
-                </span>
+                <span className="log-num font-mono">#{idx + 1}</span>
+                <span className="log-badge-wrapper">{renderActionBadge(step.type)}</span>
+                <span className="log-text truncate">{step.message}</span>
               </div>
             );
           })}
