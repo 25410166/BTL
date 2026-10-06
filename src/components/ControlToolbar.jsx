@@ -20,6 +20,8 @@ export function ControlToolbar({
   currentStepIndex,
   totalSteps,
   onSeekStep,
+  strategy,
+  onChangeStrategy,
   status,
 }) {
   function renderStatusBadge() {
@@ -116,10 +118,19 @@ export function ControlToolbar({
 
         <span className="sr-divider" />
 
-        {/* Algorithm label (Thuần túy Backtracking) */}
+        {/* Lựa chọn cách giải: Tuần tự vs MRV Heuristic */}
         <div className="sr-param-group">
-          <span className="sr-param-label">Thuật Toán:</span>
-          <span className="sr-algo-badge font-mono">BACKTRACKING</span>
+          <span className="sr-param-label">Cách Giải:</span>
+          <select
+            className="sr-select"
+            value={strategy}
+            onChange={e => onChangeStrategy(e.target.value)}
+            disabled={isPlaying}
+            title="Chọn chiến lược duyệt biến: Tuần tự (chuẩn đề) hoặc MRV Heuristic (nhanh vượt trội)"
+          >
+            <option value="sequential">Quay lui tuần tự</option>
+            <option value="mrv">Quay lui + MRV (Rất nhanh)</option>
+          </select>
         </div>
 
         <span className="sr-divider" />

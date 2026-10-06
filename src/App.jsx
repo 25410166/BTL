@@ -17,6 +17,10 @@ import {
   generateBacktrackingTrace,
   solveBacktrackingInstant,
 } from './algorithms/sudokuBacktracking.js';
+import {
+  generateMRVTrace,
+  solveBacktrackingMRVInstant,
+} from './algorithms/sudokuMRV.js';
 import { fireConfetti } from './utils/confetti.js';
 
 export default function App() {
@@ -41,6 +45,7 @@ export default function App() {
   }, [initialEmptyCoords]);
 
   // Simulation State
+  const [strategy, setStrategy] = useState('sequential'); // 'sequential' | 'mrv'
   const [speedMs, setSpeedMs] = useState(50);
   const [isPlaying, setIsPlaying] = useState(false);
   const [steps, setSteps] = useState([]);
@@ -72,7 +77,10 @@ export default function App() {
       return [];
     }
 
-    const traceResult = generateBacktrackingTrace(initialBoard);
+    const traceResult =
+      strategy === 'mrv'
+        ? generateMRVTrace(initialBoard)
+        : generateBacktrackingTrace(initialBoard);
 
     setSteps(traceResult.steps);
     setSolvedBoard(traceResult.finalBoard);
@@ -179,7 +187,10 @@ export default function App() {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
 
-    const result = solveBacktrackingInstant(initialBoard);
+    const result =
+      strategy === 'mrv'
+        ? solveBacktrackingMRVInstant(initialBoard)
+        : solveBacktrackingInstant(initialBoard);
 
     if (result.solved && result.board) {
       setDisplayBoard(result.board);
@@ -242,6 +253,16 @@ export default function App() {
     setBoardTitle(title);
   }
 
+  function handleChangeStrategy(newStrat) {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setIsPlaying(false);
+    setStatus('IDLE');
+    setStrategy(newStrat);
+    setSteps([]);
+    setCurrentStepIndex(0);
+    setDisplayBoard(cloneBoard(initialBoard));
+  }
+
   const currentStep = steps[currentStepIndex] || null;
 
   return (
@@ -282,6 +303,8 @@ export default function App() {
                 currentStepIndex={currentStepIndex}
                 totalSteps={steps.length}
                 onSeekStep={handleSeekStep}
+                strategy={strategy}
+                onChangeStrategy={handleChangeStrategy}
                 status={status}
               />
             </div>
