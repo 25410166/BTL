@@ -179,7 +179,20 @@ export function SudokuBoard({
                         tabIndex={isEditable ? 0 : -1}
                         title={`Ô (${r + 1}, ${c + 1}) - ${val === 0 ? (isInitialEmpty ? "Ký tự 'X'" : 'Trống') : `Số ${val}`}`}
                       >
-                        {val === 0 ? (
+                        {/* Hiển thị số đang thử nếu ô đang được thuật toán xét */}
+                        {isActive && currentStep?.num !== undefined && currentStep?.num !== null ? (
+                          <span
+                            className={`num-display ${
+                              stepType === 'CONFLICT'
+                                ? 'num-trying-conflict'
+                                : stepType === 'BACKTRACK'
+                                ? 'num-trying-backtrack'
+                                : 'num-trying-assign'
+                            }`}
+                          >
+                            {currentStep.num}
+                          </span>
+                        ) : val === 0 ? (
                           isInitialEmpty ? (
                             <span className="x-char">X</span>
                           ) : showCandidates ? (

@@ -15,9 +15,8 @@ export function Navbar({
       <div className="navbar-container">
         {/* Left: Brand */}
         <div className="navbar-brand">
-          <div className="logo-badge">9×9</div>
+          <div className="logo-badge">B</div>
           <span className="navbar-title">Sudoku Backtracking Solver</span>
-          <span className="navbar-tag">Quay Lui Thuần Túy</span>
         </div>
 
         {/* Right: Quick Actions */}

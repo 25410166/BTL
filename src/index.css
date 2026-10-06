@@ -638,6 +638,31 @@ body {
   text-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
 }
 
+/* Candidate Number Display States khi thuật toán thử từng số */
+.num-trying-conflict {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: var(--accent-rose) !important;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.75);
+  transform: scale(1.15);
+}
+
+.num-trying-assign {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: var(--accent-cyan) !important;
+  text-shadow: 0 0 10px rgba(32, 184, 242, 0.75);
+  transform: scale(1.15);
+}
+
+.num-trying-backtrack {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: var(--accent-amber) !important;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.75);
+  transform: scale(1.15);
+}
+
 /* Active Algorithm Inspector States */
 .cell-active-inspect {
   z-index: 10;

@@ -133,6 +133,13 @@ export function SimulationSidebar({
           </div>
 
           <div className="data-row">
+            <span className="data-key">Đã quay lui</span>
+            <span className="data-val font-mono text-warning font-bold">
+              {currentStep?.stats?.backtracks ?? 0} lần
+            </span>
+          </div>
+
+          <div className="data-row">
             <span className="data-key">Ràng buộc</span>
             <span className="data-val">
               {num === undefined ? (
@@ -223,15 +230,21 @@ export function SimulationSidebar({
               </div>
               <div className="metric-box">
                 <span className="metric-lbl">Số Phép Gán</span>
-                <span className="metric-num text-primary">{executionStats?.assignments ?? 0}</span>
+                <span className="metric-num text-primary">
+                  {executionStats?.assignments ?? currentStep?.stats?.assignments ?? 0}
+                </span>
               </div>
               <div className="metric-box">
                 <span className="metric-lbl">Số Quay Lui</span>
-                <span className="metric-num text-warning">{executionStats?.backtracks ?? 0}</span>
+                <span className="metric-num text-warning font-bold">
+                  {executionStats?.backtracks ?? currentStep?.stats?.backtracks ?? 0}
+                </span>
               </div>
               <div className="metric-box">
                 <span className="metric-lbl">Độ Sâu Max</span>
-                <span className="metric-num text-purple">{executionStats?.maxDepth ?? 0}</span>
+                <span className="metric-num text-purple">
+                  {executionStats?.maxDepth ?? currentStep?.stats?.maxDepth ?? 0}
+                </span>
               </div>
             </div>
 

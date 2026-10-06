@@ -120,20 +120,20 @@ export const PRESET_TESTCASES = [
   {
     id: 'exam_5_holes_backtracking_deep',
     category: 'exam',
-    name: '5 ô X (Bẫy Backtrack sâu)',
-    shortName: '5 ô X (Bẫy)',
-    description: 'Thiết kế để giá trị thử đầu tiên gây bế tắc ở ô thứ 4 và 5, buộc thuật toán quay lui hoàn tác nhiều lần.',
+    name: '5 ô X (Bẫy Quay Lui Bắt Buộc)',
+    shortName: '5 ô X (Có quay lui)',
+    description: 'Thiết kế các ô trống có nhiều ứng viên trùng lặp, buộc thuật toán thử sai và quay lui hoàn tác 3 lần trước khi tìm được nghiệm.',
     emptyCount: 5,
     board: [
-      [0, 0, 3, 9, 2, 1, 8, 7, 6], // (1,1)=5, (1,2)=4
-      [2, 1, 9, 6, 8, 7, 5, 4, 3],
-      [8, 7, 6, 3, 5, 4, 2, 1, 9],
-      [9, 8, 7, 4, 6, 5, 3, 2, 1],
-      [3, 2, 1, 7, 9, 8, 6, 5, 4],
-      [6, 5, 4, 1, 3, 2, 9, 8, 7],
-      [7, 6, 5, 2, 4, 3, 1, 9, 8],
-      [4, 3, 2, 8, 1, 9, 7, 6, 5],
-      [1, 9, 8, 5, 7, 6, 0, 0, 0], // (9,7)=4, (9,8)=3, (9,9)=2
+      [6, 3, 5, 1, 2, 4, 0, 0, 0], // (1,7), (1,8), (1,9)
+      [2, 1, 4, 8, 9, 7, 3, 6, 5],
+      [8, 9, 7, 5, 3, 6, 2, 1, 4],
+      [1, 5, 3, 7, 4, 8, 9, 2, 6],
+      [4, 2, 8, 3, 6, 9, 5, 7, 1],
+      [7, 6, 9, 2, 5, 1, 4, 0, 3], // (6,8)
+      [3, 8, 2, 6, 1, 5, 0, 4, 9], // (7,7)
+      [5, 4, 1, 9, 7, 2, 6, 3, 8],
+      [9, 7, 6, 4, 8, 3, 1, 5, 2],
     ],
   },
   {
