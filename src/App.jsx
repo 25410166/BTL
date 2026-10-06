@@ -1,367 +1,447 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  Bike,
-  Sparkles,
-  GitBranch,
-  Gauge,
-  BookOpen,
-  Sun,
-  Moon,
-  Github,
-  PlayCircle,
-  HelpCircle,
-  Info,
-  Maximize2,
-} from './components/Icons';
-import { parseInput } from './algorithms/treeUtils';
-import {
-  preprocessBinaryLifting,
-  getLCAWithVisualizationSteps,
-  queryDistance,
-  queryLCA,
-  reconstructPath,
-} from './algorithms/binaryLifting';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Navbar } from './components/Navbar';
+import { SudokuBoard } from './components/SudokuBoard';
+import { ControlToolbar } from './components/ControlToolbar';
+import { InputSection } from './components/InputSection';
+import { OutputSection } from './components/OutputSection';
+import { StepExecutionTrace } from './components/StepExecutionTrace';
+import { BenchmarkSection } from './components/BenchmarkSection';
+import { PlayPracticeMode } from './components/PlayPracticeMode';
+import { ProblemSpecModal } from './components/ProblemSpecModal';
+import { TheoryReportModal } from './components/TheoryReportModal';
 import { PRESET_TESTCASES } from './data/presetTestcases';
-import { TreeVisualizer } from './components/TreeVisualizer';
-import { StepController } from './components/StepController';
-import { BinaryLiftingTable } from './components/BinaryLiftingTable';
-import { InputPanel } from './components/InputPanel';
-import { OutputPanel } from './components/OutputPanel';
-import { BenchmarkPanel } from './components/BenchmarkPanel';
-import { ShipperSimulator } from './components/ShipperSimulator';
-import { ReportModal } from './components/ReportModal';
+import {
+  cloneBoard,
+  getEmptyCells,
+  validateInitialBoard,
+} from './algorithms/sudokuUtils';
+import {
+  generateBacktrackingTrace,
+  solveBacktrackingInstant,
+} from './algorithms/sudokuBacktracking';
+import {
+  generateMRVTrace,
+  solveBacktrackingMRVInstant,
+} from './algorithms/sudokuMRV';
+import { fireConfetti } from './utils/confetti';
+import { SparklesIcon, BookOpenIcon, CheckCircleIcon } from './components/Icons';
 
 export default function App() {
   // Theme state
-  const [theme, setTheme] = useState('dark');
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // Active top navigation tab
-  const [activeTab, setActiveTab] = useState('visualizer'); // 'visualizer' | 'benchmark' | 'creative'
+  // View state: 'visualizer' | 'play' | 'benchmark'
+  const [activeView, setActiveView] = useState('visualizer');
+
+  // Modals state
+  const [isProblemSpecOpen, setIsProblemSpecOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
-  // Input & Testcase state
-  const [rawInput, setRawInput] = useState(PRESET_TESTCASES[0].data);
-  const [selectedPresetId, setSelectedPresetId] = useState(PRESET_TESTCASES[0].id);
+  // Sudoku Board state
+  const initialPreset = PRESET_TESTCASES[0]; // Sample đề thi
+  const [initialBoard, setInitialBoard] = useState(() => cloneBoard(initialPreset.board));
+  const [boardTitle, setBoardTitle] = useState(initialPreset.name);
+  const [displayBoard, setDisplayBoard] = useState(() => cloneBoard(initialPreset.board));
 
-  // Parse input
-  const parseResult = useMemo(() => {
-    return parseInput(rawInput);
-  }, [rawInput]);
+  // Tọa độ các ô ban đầu mang ký tự 'X'
+  const initialEmptyCoords = useMemo(() => getEmptyCells(initialBoard), [initialBoard]);
+  const initialEmptySet = useMemo(() => {
+    const s = new Set();
+    initialEmptyCoords.forEach(({ row, col }) => s.add(`${row},${col}`));
+    return s;
+  }, [initialEmptyCoords]);
 
-  // Precomputed Binary Lifting DP
-  const blData = useMemo(() => {
-    if (!parseResult.success || parseResult.n <= 0) return null;
-    return preprocessBinaryLifting(parseResult.n, parseResult.adj, 1);
-  }, [parseResult]);
-
-  // Calculated Results for all queries
-  const allResults = useMemo(() => {
-    if (!parseResult.success || !blData || !parseResult.queries) return [];
-    const { up, depth, LOGN } = blData;
-    return parseResult.queries.map(([u, v], idx) => {
-      const lca = queryLCA(u, v, up, depth, LOGN);
-      const distance = depth[u] + depth[v] - 2 * depth[lca];
-      return {
-        queryIndex: idx,
-        u,
-        v,
-        distance,
-        lca,
-      };
-    });
-  }, [parseResult, blData]);
-
-  // Visualizer interactive query selection
-  const [activeQueryIndex, setActiveQueryIndex] = useState(0);
-  const [selectedStartNode, setSelectedStartNode] = useState(null);
-  const [selectedEndNode, setSelectedEndNode] = useState(null);
-
-  // Visualization Steps state
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  // Visualizer execution state
+  const [strategy, setStrategy] = useState('sequential'); // 'sequential' | 'mrv'
+  const [speedMs, setSpeedMs] = useState(50);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [fuelCapacity, setFuelCapacity] = useState(8);
-  const [shipperNode, setShipperNode] = useState(null);
+  const [steps, setSteps] = useState([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [status, setStatus] = useState('IDLE'); // 'IDLE' | 'RUNNING' | 'PAUSED' | 'SOLVED' | 'NO_SOLUTION'
+  const [solvedBoard, setSolvedBoard] = useState(null);
+  const [executionStats, setExecutionStats] = useState(null);
 
-  // Compute active query pair
-  const activeQuery = useMemo(() => {
-    if (selectedStartNode && selectedEndNode) {
-      return [selectedStartNode, selectedEndNode];
-    }
-    if (parseResult.queries && parseResult.queries[activeQueryIndex]) {
-      return parseResult.queries[activeQueryIndex];
-    }
-    return [1, 1];
-  }, [selectedStartNode, selectedEndNode, parseResult.queries, activeQueryIndex]);
+  const timerRef = useRef(null);
 
-  // Generate visualization steps whenever activeQuery or blData changes
-  const visualizationSteps = useMemo(() => {
-    if (!blData || !activeQuery) return [];
-    const [u, v] = activeQuery;
-    return getLCAWithVisualizationSteps(u, v, blData.up, blData.depth, blData.LOGN);
-  }, [blData, activeQuery]);
-
-  // Reset step index when query changes
+  // Áp dụng theme class vào thẻ html root
   useEffect(() => {
-    setCurrentStepIndex(0);
-    setIsPlaying(false);
-  }, [activeQuery]);
-
-  // Active step in the visualizer
-  const currentStep = visualizationSteps[currentStepIndex] || null;
-
-  // Handle direct node click on tree
-  const handleSelectNode = (nodeId) => {
-    if (!selectedStartNode || (selectedStartNode && selectedEndNode)) {
-      setSelectedStartNode(nodeId);
-      setSelectedEndNode(null);
-    } else if (selectedStartNode && !selectedEndNode) {
-      setSelectedEndNode(nodeId);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
     }
-  };
+  }, [isDarkMode]);
 
-  // Preset load handler
-  const handleLoadPreset = (preset) => {
-    setSelectedPresetId(preset.id);
-    setRawInput(preset.data);
-    setSelectedStartNode(null);
-    setSelectedEndNode(null);
-    setActiveQueryIndex(0);
-  };
+  // Chuẩn bị các bước (Trace Steps) khi cần
+  function ensureStepsReady() {
+    if (steps.length > 0) return steps;
 
-  // Step control handlers
-  const handlePrevStep = useCallback(() => {
-    setCurrentStepIndex((prev) => Math.max(0, prev - 1));
-  }, []);
+    const validation = validateInitialBoard(initialBoard);
+    if (!validation.valid) {
+      alert(`Bàn cờ ban đầu không hợp lệ: ${validation.errors[0]}`);
+      return [];
+    }
 
-  const handleNextStep = useCallback(() => {
-    setCurrentStepIndex((prev) => Math.min(visualizationSteps.length - 1, prev + 1));
-  }, [visualizationSteps.length]);
+    const traceResult =
+      strategy === 'mrv'
+        ? generateMRVTrace(initialBoard)
+        : generateBacktrackingTrace(initialBoard);
 
-  const handleResetSteps = useCallback(() => {
-    setCurrentStepIndex(0);
+    setSteps(traceResult.steps);
+    setSolvedBoard(traceResult.finalBoard);
+    setExecutionStats(traceResult.stats);
+    return traceResult.steps;
+  }
+
+  // Khởi động hoặc tạm dừng chạy tự động
+  function handleTogglePlay() {
+    if (isPlaying) {
+      // Đang chạy -> Tạm dừng
+      setIsPlaying(false);
+      setStatus('PAUSED');
+      if (timerRef.current) clearInterval(timerRef.current);
+    } else {
+      // Đang dừng -> Bắt đầu chạy
+      const traceSteps = ensureStepsReady();
+      if (!traceSteps || traceSteps.length === 0) return;
+
+      setIsPlaying(true);
+      setStatus('RUNNING');
+    }
+  }
+
+  // Effect chạy vòng lặp hoạt ảnh theo speedMs
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    timerRef.current = setInterval(() => {
+      setCurrentStepIndex(prevIdx => {
+        const nextIdx = prevIdx + 1;
+        if (nextIdx >= steps.length) {
+          // Đã chạy tới bước cuối cùng
+          clearInterval(timerRef.current);
+          setIsPlaying(false);
+          const lastStep = steps[steps.length - 1];
+          if (lastStep?.type === 'SUCCESS') {
+            setStatus('SOLVED');
+            setDisplayBoard(lastStep.board);
+            fireConfetti();
+          } else {
+            setStatus('NO_SOLUTION');
+          }
+          return prevIdx;
+        }
+
+        // Cập nhật bàn cờ hiển thị theo bước hiện thời
+        setDisplayBoard(steps[nextIdx].board);
+        return nextIdx;
+      });
+    }, speedMs);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPlaying, speedMs, steps]);
+
+  // Tiến 1 bước (Step Forward)
+  function handleStepForward() {
+    const traceSteps = ensureStepsReady();
+    if (!traceSteps || traceSteps.length === 0) return;
+
+    if (currentStepIndex < traceSteps.length - 1) {
+      const nextIdx = currentStepIndex + 1;
+      setCurrentStepIndex(nextIdx);
+      setDisplayBoard(traceSteps[nextIdx].board);
+
+      if (nextIdx === traceSteps.length - 1) {
+        if (traceSteps[nextIdx].type === 'SUCCESS') {
+          setStatus('SOLVED');
+          fireConfetti();
+        } else {
+          setStatus('NO_SOLUTION');
+        }
+      }
+    }
+  }
+
+  // Lùi 1 bước (Step Backward)
+  function handleStepBackward() {
+    if (currentStepIndex > 0) {
+      const prevIdx = currentStepIndex - 1;
+      setCurrentStepIndex(prevIdx);
+      setDisplayBoard(steps[prevIdx].board);
+      setStatus('PAUSED');
+    }
+  }
+
+  // Tua trực tiếp đến 1 bước cụ thể
+  function handleSeekStep(targetIdx) {
+    if (steps.length === 0) return;
+    const clampedIdx = Math.max(0, Math.min(targetIdx, steps.length - 1));
+    setCurrentStepIndex(clampedIdx);
+    setDisplayBoard(steps[clampedIdx].board);
+  }
+
+  // Đặt lại bàn cờ về ban đầu
+  function handleReset() {
+    if (timerRef.current) clearInterval(timerRef.current);
     setIsPlaying(false);
-  }, []);
+    setStatus('IDLE');
+    setCurrentStepIndex(0);
+    setDisplayBoard(cloneBoard(initialBoard));
+  }
 
-  const handleJumpToStep = (index) => {
-    setCurrentStepIndex(index);
-  };
+  // Giải tức thì (Instant Solve)
+  function handleInstantSolve() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setIsPlaying(false);
+
+    const result =
+      strategy === 'mrv'
+        ? solveBacktrackingMRVInstant(initialBoard)
+        : solveBacktrackingInstant(initialBoard);
+
+    if (result.solved && result.board) {
+      setDisplayBoard(result.board);
+      setSolvedBoard(result.board);
+      setExecutionStats(result.stats);
+      setStatus('SOLVED');
+      fireConfetti();
+    } else {
+      setStatus('NO_SOLUTION');
+      setSolvedBoard(null);
+    }
+  }
+
+  // Nạp dữ liệu bàn cờ mới từ InputSection
+  function handleApplyBoard(newBoard, title = 'Bàn cờ tùy chỉnh') {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setIsPlaying(false);
+    setStatus('IDLE');
+    setSteps([]);
+    setCurrentStepIndex(0);
+    setSolvedBoard(null);
+    setExecutionStats(null);
+
+    setInitialBoard(cloneBoard(newBoard));
+    setDisplayBoard(cloneBoard(newBoard));
+    setBoardTitle(title);
+  }
+
+  // Chuyển đổi chiến lược Backtracking
+  function handleChangeStrategy(newStrat) {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setIsPlaying(false);
+    setStatus('IDLE');
+    setStrategy(newStrat);
+    setSteps([]);
+    setCurrentStepIndex(0);
+    setDisplayBoard(cloneBoard(initialBoard));
+  }
+
+  // Nạp Sample đề bài từ modal
+  function handleLoadExamSample() {
+    const sample = PRESET_TESTCASES.find(t => t.id === 'sample_exam');
+    if (sample) {
+      handleApplyBoard(sample.board, sample.name);
+    }
+  }
+
+  const currentStep = steps[currentStepIndex] || null;
 
   return (
-    <div className={`app-root ${theme}`}>
-      {/* Top Navigation Bar */}
-      <header className="app-header">
-        <div className="header-brand">
-          <div className="brand-logo-icon">
-            <Bike size={22} />
+    <div className="app-layout min-h-screen bg-surface-1 text-primary flex flex-col font-sans transition-colors duration-200">
+      {/* 1. Thanh điều hướng đầu trang */}
+      <Navbar
+        activeView={activeView}
+        onChangeView={setActiveView}
+        onOpenProblemSpec={() => setIsProblemSpecOpen(true)}
+        onOpenReport={() => setIsReportOpen(true)}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode(prev => !prev)}
+      />
+
+      {/* 2. Banner thông tin đề tài nổi bật */}
+      <section className="bg-surface-2 border-b border-subtle py-2.5 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="badge badge-accent">Đang xét:</span>
+            <span className="font-semibold text-primary">{boardTitle}</span>
+            <span className="text-secondary">
+              ({initialEmptyCoords.length} ô trống mang ký tự 'X' cần tìm số)
+            </span>
+            {initialEmptyCoords.length <= 5 ? (
+              <span className="badge badge-emerald text-[10px] hidden sm:inline-flex items-center gap-1">
+                <CheckCircleIcon className="w-3 h-3" /> Chuẩn Đề Thi (≤ 5 ô X)
+              </span>
+            ) : (
+              <span className="badge badge-purple text-[10px] hidden sm:inline-flex items-center gap-1">
+                <SparklesIcon className="w-3 h-3" /> Mở Rộng Thử Thách
+              </span>
+            )}
           </div>
-          <div className="brand-text">
-            <h1 className="brand-title">Người Giao Cơm</h1>
-            <span className="brand-badge">Lưu Ngô Tree LCA Solver</span>
+
+          <div className="flex items-center gap-3 text-secondary text-[11px]">
+            <span>
+              Thuật toán: <strong className="text-accent">100% Backtracking (Quay lui)</strong>
+            </span>
+            <button
+              className="text-accent underline font-medium hover:text-primary transition-colors"
+              onClick={() => setIsProblemSpecOpen(true)}
+            >
+              Xem đề bài gốc & ví dụ
+            </button>
           </div>
         </div>
+      </section>
 
-        {/* Center Tabs */}
-        <nav className="header-nav">
-          <button
-            className={`nav-tab ${activeTab === 'visualizer' ? 'active' : ''}`}
-            onClick={() => setActiveTab('visualizer')}
-          >
-            <GitBranch size={16} />
-            <span>Mô Phỏng Trực Quan</span>
-          </button>
-          <button
-            className={`nav-tab ${activeTab === 'benchmark' ? 'active' : ''}`}
-            onClick={() => setActiveTab('benchmark')}
-          >
-            <Gauge size={16} />
-            <span>So Sánh Thuật Toán (Benchmark)</span>
-          </button>
-          <button
-            className={`nav-tab ${activeTab === 'creative' ? 'active' : ''}`}
-            onClick={() => setActiveTab('creative')}
-          >
-            <Sparkles size={16} />
-            <span>Mở Rộng: Giao Đa Điểm & Xăng</span>
-          </button>
-        </nav>
+      {/* 3. Thân trang ứng dụng */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* VIEW 1: TRỰC QUAN HÓA THUẬT TOÁN (CHẾ ĐỘ MẶC ĐỊNH) */}
+        {activeView === 'visualizer' && (
+          <div className="space-y-6">
+            {/* Thanh công cụ điều khiển mô phỏng */}
+            <ControlToolbar
+              isPlaying={isPlaying}
+              onTogglePlay={handleTogglePlay}
+              onStepForward={handleStepForward}
+              onStepBackward={handleStepBackward}
+              onReset={handleReset}
+              onInstantSolve={handleInstantSolve}
+              speedMs={speedMs}
+              onChangeSpeed={setSpeedMs}
+              currentStepIndex={currentStepIndex}
+              totalSteps={steps.length}
+              onSeekStep={handleSeekStep}
+              strategy={strategy}
+              onChangeStrategy={handleChangeStrategy}
+              status={status}
+            />
 
-        {/* Right Actions */}
-        <div className="header-actions">
-          <button
-            className="btn-report"
-            onClick={() => setIsReportOpen(true)}
-            title="Xem báo cáo khoa học & kỹ thuật"
-          >
-            <BookOpen size={16} />
-            <span>Báo Cáo Điểm 10</span>
-          </button>
+            {/* Bố cục 2 cột chính: Bên trái Bàn cờ, Bên phải Trình theo dõi chi tiết */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Cột trái (7/12): Bàn cờ Sudoku 9x9 */}
+              <div className="lg:col-span-7 flex flex-col items-center board-main-wrapper p-4 sm:p-6 rounded-2xl bg-surface-card border border-subtle shadow-card">
+                <SudokuBoard
+                  board={displayBoard}
+                  initialEmptySet={initialEmptySet}
+                  currentStep={currentStep}
+                  userSolvedState={status === 'SOLVED'}
+                />
 
-          <button
-            className="btn-icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title="Đổi giao diện Sáng / Tối"
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noreferrer"
-            className="btn-icon github"
-            title="Mã nguồn GitHub"
-          >
-            <Github size={18} />
-          </a>
-        </div>
-      </header>
-
-      {/* Main App Content */}
-      <main className="app-main-content">
-        {activeTab === 'visualizer' && (
-          <div className="visualizer-layout-grid">
-            {/* Left Column: Tree Canvas & Step Controls */}
-            <section className="canvas-section">
-              <div className="canvas-header-bar">
-                <div className="query-display">
-                  <span className="query-label">Đang xem truy vấn:</span>
-                  <span className="query-target">
-                    Căn hộ <strong>{activeQuery[0]}</strong> ➔ <strong>{activeQuery[1]}</strong>
-                  </span>
-                  {allResults[activeQueryIndex] && (
-                    <span className="query-distance-badge">
-                      Khoảng cách = <strong>{allResults[activeQueryIndex].distance}</strong>
-                    </span>
-                  )}
-                </div>
-
-                <div className="tree-quick-hints">
-                  <span>Mẹo: Click 2 đỉnh trên cây để truy vấn bất kỳ</span>
+                {/* Chú thích màu sắc trực quan (Legend) */}
+                <div className="mt-5 w-full pt-4 border-t border-subtle grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[11px] text-secondary">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded bg-surface-2 border border-subtle inline-block" />
+                    <span>Số cho sẵn đề bài</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded bg-amber-500/20 border border-amber-500 inline-block" />
+                    <span>Ô trống 'X' ban đầu</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded bg-sky-500/20 border border-sky-400 inline-block animate-pulse" />
+                    <span>Ô đang thử giá trị</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded bg-rose-500/20 border border-rose-500 inline-block" />
+                    <span>Xung đột hàng/cột/khối</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded bg-orange-500/20 border border-orange-500 inline-block" />
+                    <span>Quay lui (Backtrack)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3.5 h-3.5 rounded bg-emerald-500/20 border border-emerald-400 inline-block" />
+                    <span>Số đã giải thành công</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Tree Canvas */}
-              {parseResult.success && parseResult.n > 0 ? (
-                <TreeVisualizer
-                  n={parseResult.n}
-                  adj={parseResult.adj}
-                  root={1}
-                  activeQuery={activeQuery}
+              {/* Cột phải (5/12): Theo dõi vết đệ quy & Call Stack */}
+              <div className="lg:col-span-5 space-y-6">
+                <StepExecutionTrace
                   currentStep={currentStep}
-                  selectedStartNode={selectedStartNode}
-                  selectedEndNode={selectedEndNode}
-                  onSelectNode={handleSelectNode}
-                  shipperProgress={
-                    shipperNode
-                      ? { currNode: shipperNode }
-                      : currentStep?.finalPath
-                      ? { currNode: currentStep.finalPath[0] }
-                      : null
-                  }
+                  currentStepIndex={currentStepIndex}
+                  totalSteps={steps.length}
+                  allSteps={steps}
+                  onSelectStep={handleSeekStep}
                 />
-              ) : (
-                <div className="canvas-error-placeholder">
-                  <Info size={28} />
-                  <p>Vui lòng nhập dữ liệu cây hợp lệ ở khung bên phải để vẽ đồ thị.</p>
-                </div>
-              )}
+              </div>
+            </div>
 
-              {/* Step Playback Controller */}
-              <StepController
-                steps={visualizationSteps}
-                currentStepIndex={currentStepIndex}
-                isPlaying={isPlaying}
-                playbackSpeed={playbackSpeed}
-                onPlayPause={setIsPlaying}
-                onPrevStep={handlePrevStep}
-                onNextStep={handleNextStep}
-                onReset={handleResetSteps}
-                onJumpToStep={handleJumpToStep}
-                onChangeSpeed={setPlaybackSpeed}
+            {/* Bố cục 2 cột phụ: Input đầu vào & Output đầu ra */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <InputSection
+                currentBoard={initialBoard}
+                onApplyBoard={handleApplyBoard}
+                disabled={isPlaying}
               />
-
-              {/* DP Table Inspector */}
-              {blData && (
-                <BinaryLiftingTable
-                  n={parseResult.n}
-                  up={blData.up}
-                  depth={blData.depth}
-                  LOGN={blData.LOGN}
-                  activeNodes={currentStep?.activeNodes || []}
-                />
-              )}
-            </section>
-
-            {/* Right Column: Input & Output Panels */}
-            <aside className="data-sidebar">
-              <InputPanel
-                rawInput={rawInput}
-                onInputChange={setRawInput}
-                parseResult={parseResult}
-                onLoadPreset={handleLoadPreset}
-                selectedPresetId={selectedPresetId}
-              />
-
-              <OutputPanel
-                queries={parseResult.queries || []}
-                results={allResults}
-                onSelectQuery={(idx) => {
-                  setActiveQueryIndex(idx);
-                  setSelectedStartNode(null);
-                  setSelectedEndNode(null);
-                }}
-                activeQueryIndex={activeQueryIndex}
-                fuelCapacity={fuelCapacity}
-              />
-            </aside>
-          </div>
-        )}
-
-        {activeTab === 'benchmark' && (
-          <BenchmarkPanel
-            n={parseResult.n || 5}
-            adj={parseResult.adj || []}
-            queries={parseResult.queries || []}
-            root={1}
-          />
-        )}
-
-        {activeTab === 'creative' && blData && (
-          <div className="creative-tab-container">
-            <ShipperSimulator
-              n={parseResult.n}
-              up={blData.up}
-              depth={blData.depth}
-              LOGN={blData.LOGN}
-              fuelCapacity={fuelCapacity}
-              setFuelCapacity={setFuelCapacity}
-              onStepNodeChange={setShipperNode}
-            />
-
-            {/* Live Tree Preview inside Creative Simulator */}
-            <div className="creative-canvas-wrapper">
-              <TreeVisualizer
-                n={parseResult.n}
-                adj={parseResult.adj}
-                root={1}
-                activeQuery={[1, 1]}
-                currentStep={{
-                  finalPath: [],
-                  activeNodes: [shipperNode || 1],
-                }}
-                selectedStartNode={null}
-                selectedEndNode={null}
-                onSelectNode={() => {}}
-                shipperProgress={shipperNode ? { currNode: shipperNode } : null}
+              <OutputSection
+                solvedBoard={solvedBoard || (status === 'SOLVED' ? displayBoard : null)}
+                initialEmptyCoords={initialEmptyCoords}
+                stats={executionStats}
+                isSolved={status === 'SOLVED'}
+                isUnsolvable={status === 'NO_SOLUTION'}
+                status={status}
               />
             </div>
           </div>
         )}
+
+        {/* VIEW 2: TỰ GIẢI & LUYỆN TẬP (PLAY MODE) */}
+        {activeView === 'play' && (
+          <div className="space-y-6">
+            <PlayPracticeMode
+              initialBoard={initialBoard}
+              initialEmptySet={initialEmptySet}
+            />
+          </div>
+        )}
+
+        {/* VIEW 3: ĐỐI SÁNH THUẬT TOÁN (BENCHMARK) */}
+        {activeView === 'benchmark' && (
+          <div className="space-y-6">
+            <BenchmarkSection />
+          </div>
+        )}
       </main>
 
-      {/* Academic Report Modal */}
-      <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} />
+      {/* 4. Footer */}
+      <footer className="bg-surface-2 border-t border-subtle py-4 px-4 sm:px-6 text-center text-xs text-secondary mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p>
+            Bài Tập Lớn: <strong>Giải Sudoku 9×9 Bằng Kỹ Thuật Quay Lui (Backtracking)</strong> — Triển khai React + Vite
+          </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsReportOpen(true)}
+              className="text-accent hover:underline"
+            >
+              Báo Cáo Lý Thuyết
+            </button>
+            <button
+              onClick={() => setIsProblemSpecOpen(true)}
+              className="text-accent hover:underline"
+            >
+              Mô Tả Bài Toán
+            </button>
+          </div>
+        </div>
+      </footer>
+
+      {/* Modals */}
+      <ProblemSpecModal
+        isOpen={isProblemSpecOpen}
+        onClose={() => setIsProblemSpecOpen(false)}
+        onLoadSample={handleLoadExamSample}
+      />
+      <TheoryReportModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+      />
     </div>
   );
 }

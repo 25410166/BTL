@@ -1,211 +1,230 @@
-// Rich preset testcases covering diverse topologies, edge cases, and scales
+// Bộ testcase đa dạng, toàn diện phục vụ kiểm thử hệ thống
+// Phân chia thành 2 phân loại chính:
+// 1. Chuẩn đề thi (Khống chế <= 5 ô trống 'X' theo đúng yêu cầu đề bài)
+// 2. Mở rộng & Thử thách (Đa dạng độ khó 20 - 54 ô trống để đánh giá năng lực Backtracking)
 
 export const PRESET_TESTCASES = [
+  // ==========================================
+  // NHÓM 1: CHUẨN ĐỀ THI (Tối đa 5 ô trống 'X')
+  // ==========================================
   {
-    id: 'sample',
-    title: 'Test 1: Đề bài mẫu (Sample 5 căn hộ)',
-    category: 'Cơ bản',
-    badge: 'Đề bài',
-    description: 'Cây 5 căn hộ từ đề bài. Kiểm thử tính đúng đắn với kết quả mẫu: [1, 3, 2].',
-    data: `5 3
-1 2
-1 3
-3 4
-3 5
-1 3
-2 5
-1 4`,
+    id: 'sample_exam',
+    category: 'exam',
+    name: 'Sample đề thi (1 ô X)',
+    description: 'Trùng khớp 100% ví dụ mẫu trong đề bài của giảng viên. Chỉ có 1 ô X tại hàng 4 cột 8, nghiệm là 1.',
+    emptyCount: 1,
+    board: [
+      [5, 8, 1, 6, 7, 2, 4, 3, 9],
+      [7, 9, 2, 8, 4, 3, 6, 5, 1],
+      [3, 6, 4, 5, 9, 1, 7, 8, 2],
+      [4, 3, 8, 9, 5, 7, 2, 0, 6], // (4, 8) là X
+      [2, 5, 6, 1, 8, 4, 9, 7, 3],
+      [1, 7, 9, 3, 2, 6, 8, 4, 5],
+      [8, 4, 5, 2, 1, 9, 3, 6, 7],
+      [9, 1, 3, 7, 6, 8, 5, 2, 4],
+      [6, 2, 7, 4, 3, 5, 1, 9, 8],
+    ],
   },
   {
-    id: 'bamboo',
-    title: 'Test 2: Cây dây xích (Line / Bamboo)',
-    category: 'Cấu trúc đặc thù',
-    badge: 'Độ sâu cực đại',
-    description:
-      'Cây suy biến thành 1 đường thẳng (1-2-3-...-12). Kiểm thử trường hợp xấu nhất về độ sâu: kiểm tra nhảy nhị phân nhiều tầng.',
-    data: `12 6
-1 2
-2 3
-3 4
-4 5
-5 6
-6 7
-7 8
-8 9
-9 10
-10 11
-11 12
-1 12
-2 11
-4 8
-5 5
-12 1
-3 7`,
+    id: 'exam_2_holes',
+    category: 'exam',
+    name: 'Đề thi 2 ô trống (Cùng hàng)',
+    description: 'Có đúng 2 ô X nằm trên cùng hàng 2. Thuật toán kiểm tra và điền lần lượt hai số còn thiếu.',
+    emptyCount: 2,
+    board: [
+      [5, 8, 1, 6, 7, 2, 4, 3, 9],
+      [7, 0, 2, 8, 4, 3, 6, 0, 1], // Ô (2,2) và (2,8) là X
+      [3, 6, 4, 5, 9, 1, 7, 8, 2],
+      [4, 3, 8, 9, 5, 7, 2, 1, 6],
+      [2, 5, 6, 1, 8, 4, 9, 7, 3],
+      [1, 7, 9, 3, 2, 6, 8, 4, 5],
+      [8, 4, 5, 2, 1, 9, 3, 6, 7],
+      [9, 1, 3, 7, 6, 8, 5, 2, 4],
+      [6, 2, 7, 4, 3, 5, 1, 9, 8],
+    ],
   },
   {
-    id: 'star',
-    title: 'Test 3: Cây hình sao (Star Graph)',
-    category: 'Cấu trúc đặc thù',
-    badge: 'Bậc cao nhất',
-    description:
-      'Đỉnh trung tâm 1 nối với tất cả các căn hộ còn lại. Độ cao h=1. Khoảng cách giữa 2 lá luôn bằng 2 qua đỉnh 1.',
-    data: `9 5
-1 2
-1 3
-1 4
-1 5
-1 6
-1 7
-1 8
-1 9
-2 3
-4 8
-1 5
-7 7
-6 9`,
+    id: 'exam_3_holes',
+    category: 'exam',
+    name: 'Đề thi 3 ô trống (Rải rác 3 khối)',
+    description: '3 ô X nằm tại 3 khối 3x3 khác nhau, kiểm tra tính độc lập và khả năng suy luận cục bộ.',
+    emptyCount: 3,
+    board: [
+      [0, 8, 1, 6, 7, 2, 4, 3, 9], // Ô (1,1) là X -> 5
+      [7, 9, 2, 8, 4, 3, 6, 5, 1],
+      [3, 6, 4, 5, 9, 1, 7, 8, 2],
+      [4, 3, 8, 9, 0, 7, 2, 1, 6], // Ô (4,5) là X -> 5
+      [2, 5, 6, 1, 8, 4, 9, 7, 3],
+      [1, 7, 9, 3, 2, 6, 8, 4, 5],
+      [8, 4, 5, 2, 1, 9, 3, 6, 7],
+      [9, 1, 3, 7, 6, 8, 5, 2, 4],
+      [6, 2, 7, 4, 3, 5, 1, 9, 0], // Ô (9,9) là X -> 8
+    ],
   },
   {
-    id: 'binary',
-    title: 'Test 4: Cây nhị phân hoàn chỉnh (Complete Binary Tree)',
-    category: 'Cân bằng',
-    badge: 'Cân bằng O(log N)',
-    description:
-      'Cây nhị phân 15 căn hộ cân bằng hoàn hảo. Kiểm thử việc tìm LCA giữa hai nhánh con trái - phải đối xứng.',
-    data: `15 7
-1 2
-1 3
-2 4
-2 5
-3 6
-3 7
-4 8
-4 9
-5 10
-5 11
-6 12
-6 13
-7 14
-7 15
-8 9
-8 15
-4 7
-10 13
-1 15
-11 11
-2 10`,
+    id: 'exam_4_holes',
+    category: 'exam',
+    name: 'Đề thi 4 ô trống (Giao thoa hàng cột)',
+    description: '4 ô trống tạo thành hình chữ nhật giao thoa giữa hàng 1, hàng 9 và cột 1, cột 9.',
+    emptyCount: 4,
+    board: [
+      [0, 8, 1, 6, 7, 2, 4, 3, 0], // Ô (1,1)=5, (1,9)=9
+      [7, 9, 2, 8, 4, 3, 6, 5, 1],
+      [3, 6, 4, 5, 9, 1, 7, 8, 2],
+      [4, 3, 8, 9, 5, 7, 2, 1, 6],
+      [2, 5, 6, 1, 8, 4, 9, 7, 3],
+      [1, 7, 9, 3, 2, 6, 8, 4, 5],
+      [8, 4, 5, 2, 1, 9, 3, 6, 7],
+      [9, 1, 3, 7, 6, 8, 5, 2, 4],
+      [0, 2, 7, 4, 3, 5, 1, 9, 0], // Ô (9,1)=6, (9,9)=8
+    ],
   },
   {
-    id: 'edge_cases',
-    title: 'Test 5: Các ca kiểm thử biên (Corner & Edge Cases)',
-    category: 'Biên & Lỗi tiềm ẩn',
-    badge: 'Edge Cases',
-    description:
-      'Kiểm thử các trường hợp nhạy cảm: truy vấn trùng đỉnh (dist=0), cạnh kề nhau (dist=1), gốc đến lá, nốt lá lên cụm lá.',
-    data: `7 7
-1 2
-2 3
-2 4
-1 5
-5 6
-5 7
-3 3
-1 1
-1 2
-2 4
-3 4
-6 7
-3 7`,
+    id: 'exam_5_holes_standard',
+    category: 'exam',
+    name: 'Đề thi 5 ô trống (Tối đa đề bài)',
+    description: 'Đúng 5 ô trống (mức tối đa theo quy định của đề bài). Kiểm thử đệ quy 5 cấp.',
+    emptyCount: 5,
+    board: [
+      [5, 8, 0, 6, 7, 2, 4, 3, 9], // (1,3)=1
+      [7, 9, 2, 8, 4, 3, 6, 5, 1],
+      [3, 6, 4, 5, 0, 1, 7, 8, 2], // (3,5)=9
+      [4, 3, 8, 9, 5, 7, 2, 0, 6], // (4,8)=1
+      [2, 5, 6, 1, 8, 4, 9, 7, 3],
+      [1, 7, 9, 3, 2, 6, 8, 4, 5],
+      [8, 0, 5, 2, 1, 9, 3, 6, 7], // (7,2)=4
+      [9, 1, 3, 7, 6, 8, 5, 2, 4],
+      [6, 2, 7, 4, 3, 5, 1, 9, 0], // (9,9)=8
+    ],
   },
   {
-    id: 'caterpillar',
-    title: 'Test 6: Cây sâu róm (Caterpillar Graph)',
-    category: 'Hỗn hợp',
-    badge: 'Cụm phân nhánh',
-    description:
-      'Trục chính dài kết hợp các cụm lá gắn rải rác. Mô phỏng khu đô thị với trục đường chính và các ngõ cụt.',
-    data: `16 8
-1 2
-2 3
-3 4
-4 5
-5 6
-1 7
-1 8
-2 9
-3 10
-3 11
-4 12
-5 13
-6 14
-6 15
-6 16
-7 8
-7 16
-10 11
-9 13
-1 6
-8 14
-15 15
-2 12`,
+    id: 'exam_5_holes_backtracking_deep',
+    category: 'exam',
+    name: 'Đề thi 5 ô trống (Buộc Backtrack sâu)',
+    description: 'Thiết kế để giá trị thử đầu tiên (ví dụ 1, 2) có vẻ hợp lệ tại ô đầu nhưng gây bế tắc ở ô thứ 4 và 5, buộc thuật toán phải quay lui hoàn tác nhiều lần.',
+    emptyCount: 5,
+    board: [
+      [0, 0, 3, 9, 2, 1, 8, 7, 6], // (1,1)=5, (1,2)=4
+      [2, 1, 9, 6, 8, 7, 5, 4, 3],
+      [8, 7, 6, 3, 5, 4, 2, 1, 9],
+      [9, 8, 7, 4, 6, 5, 3, 2, 1],
+      [3, 2, 1, 7, 9, 8, 6, 5, 4],
+      [6, 5, 4, 1, 3, 2, 9, 8, 7],
+      [7, 6, 5, 2, 4, 3, 1, 9, 8],
+      [4, 3, 2, 8, 1, 9, 7, 6, 5],
+      [1, 9, 8, 5, 7, 6, 0, 0, 0], // (9,7)=4, (9,8)=3, (9,9)=2
+    ],
   },
   {
-    id: 'minimal_two',
-    title: 'Test 7: Cây tối thiểu (N = 2 căn hộ)',
-    category: 'Biên kích thước',
-    badge: 'N = 2',
-    description: 'Chỉ 2 căn hộ duy nhất nối nhau. Kiểm thử giới hạn dưới của cây liên thông.',
-    data: `2 3
-1 2
-1 2
-2 1
-2 2`,
+    id: 'exam_unsolvable',
+    category: 'exam',
+    name: 'Testcase Vô Nghiệm (Không có lời giải)',
+    description: 'Có 3 ô X nhưng các số cố định xung quanh tạo nên thế mâu thuẫn không thể thỏa mãn. Thuật toán duyệt hết không gian trạng thái và kết luận vô nghiệm.',
+    emptyCount: 3,
+    board: [
+      [0, 2, 3, 4, 5, 6, 7, 8, 9], // Ô (1,1) trống, hàng 1 cần số 1
+      [4, 5, 6, 7, 8, 9, 1, 2, 3],
+      [7, 8, 9, 1, 2, 3, 4, 5, 6],
+      [2, 3, 4, 5, 6, 7, 8, 9, 1],
+      [5, 6, 7, 8, 9, 1, 2, 3, 4],
+      [8, 9, 1, 2, 3, 4, 5, 6, 7],
+      [3, 4, 5, 6, 7, 8, 9, 1, 2],
+      [6, 7, 8, 9, 1, 2, 3, 4, 5],
+      [1, 0, 0, 0, 0, 0, 0, 0, 0], // Ô (9,1)=1 triệt tiêu ứng viên 1 của (1,1) nhưng không trùng hàng/khối
+    ],
   },
   {
-    id: 'medium_scale',
-    title: 'Test 8: Cây quy mô vừa (N = 50, Q = 25)',
-    category: 'Quy mô',
-    badge: 'Medium (N=50)',
-    description:
-      'Cây ngẫu nhiên 50 căn hộ và 25 truy vấn. Đủ lớn để kiểm tra hiệu năng tính toán và giao diện trực quan.',
-    data: (() => {
-      const n = 50;
-      const q = 25;
-      const edges = [];
-      for (let i = 2; i <= n; i++) {
-        const p = 1 + Math.floor(Math.random() * (i - 1));
-        edges.push(`${p} ${i}`);
-      }
-      const queries = [];
-      for (let i = 0; i < q; i++) {
-        const u = 1 + Math.floor(Math.random() * n);
-        const v = 1 + Math.floor(Math.random() * n);
-        queries.push(`${u} ${v}`);
-      }
-      return `${n} ${q}\n${edges.join('\n')}\n${queries.join('\n')}`;
-    })(),
+    id: 'exam_invalid_input',
+    category: 'exam',
+    name: 'Testcase Dữ Liệu Lỗi (Trùng lặp ban đầu)',
+    description: 'Input ban đầu đã vi phạm luật Sudoku (ví dụ 2 số 5 trên cùng một hàng). Hệ thống phát hiện lỗi ngay từ khâu tiền xử lý.',
+    emptyCount: 2,
+    board: [
+      [5, 5, 1, 6, 7, 2, 4, 3, 9], // Trùng số 5 ở cột 1 và 2
+      [7, 9, 2, 8, 4, 3, 6, 5, 1],
+      [3, 6, 4, 5, 9, 1, 7, 8, 2],
+      [4, 3, 8, 9, 0, 7, 2, 1, 6],
+      [2, 5, 6, 1, 8, 4, 9, 7, 3],
+      [1, 7, 9, 3, 2, 6, 8, 4, 5],
+      [8, 4, 5, 2, 1, 9, 3, 6, 7],
+      [9, 1, 3, 7, 6, 8, 5, 2, 4],
+      [6, 2, 7, 4, 3, 5, 1, 9, 0],
+    ],
+  },
+
+  // ==========================================
+  // NHÓM 2: MỞ RỘNG & THỬ THÁCH ĐIỂM 10
+  // ==========================================
+  {
+    id: 'expand_easy_20',
+    category: 'expand',
+    name: 'Mở rộng: Cấp độ Dễ (20 ô trống)',
+    description: 'Ma trận Sudoku chuẩn với 20 ô trống. Kiểm nghiệm sức mạnh thuật toán trên bài toán kích thước vừa.',
+    emptyCount: 20,
+    board: [
+      [5, 3, 0, 0, 7, 0, 0, 0, 0],
+      [6, 0, 0, 1, 9, 5, 0, 0, 0],
+      [0, 9, 8, 0, 0, 0, 0, 6, 0],
+      [8, 0, 0, 0, 6, 0, 0, 0, 3],
+      [4, 0, 0, 8, 0, 3, 0, 0, 1],
+      [7, 0, 0, 0, 2, 0, 0, 0, 6],
+      [0, 6, 0, 0, 0, 0, 2, 8, 0],
+      [0, 0, 0, 4, 1, 9, 0, 0, 5],
+      [0, 0, 0, 0, 8, 0, 0, 7, 9],
+    ],
   },
   {
-    id: 'large_benchmark',
-    title: 'Test 9: Cây quy mô lớn (N = 2,000, Q = 1,000)',
-    category: 'Hiệu năng cao',
-    badge: 'Stress Test',
-    description:
-      'Cây 2,000 căn hộ và 1,000 truy vấn ngẫu nhiên. Kiểm thử tốc độ xử lý tức thì của Binary Lifting và Euler RMQ!',
-    data: (() => {
-      const n = 2000;
-      const q = 1000;
-      const edges = [];
-      for (let i = 2; i <= n; i++) {
-        const p = 1 + Math.floor(Math.random() * (i - 1));
-        edges.push(`${p} ${i}`);
-      }
-      const queries = [];
-      for (let i = 0; i < q; i++) {
-        const u = 1 + Math.floor(Math.random() * n);
-        const v = 1 + Math.floor(Math.random() * n);
-        queries.push(`${u} ${v}`);
-      }
-      return `${n} ${q}\n${edges.join('\n')}\n${queries.join('\n')}`;
-    })(),
+    id: 'expand_medium_35',
+    category: 'expand',
+    name: 'Mở rộng: Cấp độ Vừa (35 ô trống)',
+    description: '35 ô trống phân bổ cân xứng, mô phỏng câu đố báo chí hàng ngày, cây quay lui bắt đầu phân nhánh rộng.',
+    emptyCount: 35,
+    board: [
+      [0, 2, 0, 6, 0, 8, 0, 0, 0],
+      [5, 8, 0, 0, 0, 9, 7, 0, 0],
+      [0, 0, 0, 0, 4, 0, 0, 0, 0],
+      [3, 7, 0, 0, 0, 0, 5, 0, 0],
+      [6, 0, 0, 0, 0, 0, 0, 0, 4],
+      [0, 0, 8, 0, 0, 0, 0, 1, 3],
+      [0, 0, 0, 0, 2, 0, 0, 0, 0],
+      [0, 0, 9, 8, 0, 0, 0, 3, 6],
+      [0, 0, 0, 3, 0, 6, 0, 9, 0],
+    ],
+  },
+  {
+    id: 'expand_hard_48',
+    category: 'expand',
+    name: 'Mở rộng: Cấp độ Khó (48 ô trống)',
+    description: '48 ô trống, số lượng gợi ý ít, thử thách lớn về số lần quay lui và tối ưu hóa.',
+    emptyCount: 48,
+    board: [
+      [0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 3, 0, 8, 5],
+      [0, 0, 1, 0, 2, 0, 0, 0, 0],
+      [0, 0, 0, 5, 0, 7, 0, 0, 0],
+      [0, 0, 4, 0, 0, 0, 1, 0, 0],
+      [0, 9, 0, 0, 0, 0, 0, 0, 0],
+      [5, 0, 0, 0, 0, 0, 0, 7, 3],
+      [0, 0, 2, 0, 1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 4, 0, 0, 0, 9],
+    ],
+  },
+  {
+    id: 'expand_arto_inkala',
+    category: 'expand',
+    name: 'Siêu thử thách: "AI Escargot" (Arto Inkala)',
+    description: 'Câu đố Sudoku nổi tiếng của nhà toán học Arto Inkala, được coi là một trong những bảng Sudoku khó nhất thế giới, thiết kế riêng để đánh lừa các nhánh tìm kiếm.',
+    emptyCount: 58,
+    board: [
+      [1, 0, 0, 0, 0, 7, 0, 9, 0],
+      [0, 3, 0, 0, 2, 0, 0, 0, 8],
+      [0, 0, 9, 6, 0, 0, 5, 0, 0],
+      [0, 0, 5, 3, 0, 0, 9, 0, 0],
+      [0, 1, 0, 0, 8, 0, 0, 0, 2],
+      [6, 0, 0, 0, 0, 4, 0, 0, 0],
+      [3, 0, 0, 0, 0, 0, 0, 1, 0],
+      [0, 4, 0, 0, 0, 0, 0, 0, 7],
+      [0, 0, 7, 0, 0, 0, 3, 0, 0],
+    ],
   },
 ];
